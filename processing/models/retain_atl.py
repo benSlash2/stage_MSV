@@ -4,7 +4,7 @@ import torch
 import os
 from processing.models.deep_tl_predictor import DeepTLPredictor
 import torch.nn as nn
-from processing.models.pytorch_tools.training import fit, predict
+from processing.models.pytorch_tools.training import fit, predict, loss_init
 
 class RETAIN_ATL(DeepTLPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
@@ -37,6 +37,19 @@ class RETAIN_ATL(DeepTLPredictor):
         self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
+            self.params["patience"], self.checkpoint_file)
+
+    def loss_init(self):
+        x_train, y_train, t_train = self._str2dataset("train")
+        x_valid, y_valid, t_valid = self._str2dataset("valid")
+        train_ds = self._to_tensor_ds(x_train, y_train)
+        valid_ds = self._to_tensor_ds(x_valid, y_valid)
+
+        self.loss_func = self._compute_loss_func()
+
+        self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
+
+        loss_init(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
             self.params["patience"], self.checkpoint_file)
 
     def predict(self, dataset, clear=True):

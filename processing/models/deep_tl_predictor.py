@@ -93,7 +93,16 @@ class DeepTLPredictor(Predictor):
         cal = cal.reshape(-1, g.shape[1], 1)
         heart = heart.reshape(-1, g.shape[1], 1)
 
-        x = np.concatenate([g, cho, ins, mets, cal, heart], axis=2)
+        a = 0
+        for i in [g, cho, ins, mets, cal, heart]:
+            if i.size != 0:
+                if a == 0:
+                    x = i
+                else:
+                    x = np.concatenate([x, i], axis=2)
+                a += 1
+
+        # x = np.concatenate([g, cho, ins, mets, cal, heart], axis=2)
 
         return x, y, t
 

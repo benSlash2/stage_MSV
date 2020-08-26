@@ -10,7 +10,7 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
     results = []
     for i, (train_i, valid_i, test_i) in enumerate(zip(train, valid, test)):
         model = model_class(subject, ph, params, train_i, valid_i, test_i)
-
+        model.loss_init
         if weights_file:
             model.load(weights_file)
 

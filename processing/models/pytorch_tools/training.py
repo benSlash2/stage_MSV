@@ -5,6 +5,7 @@ from .early_stopping import EarlyStopping
 from misc.utils import printd
 from .plot_gradient import plot_grad_flow
 
+
 def loss_batch(model, loss_func, xb, yb, opt=None, plot_gradient=False):
     if loss_func.__class__.__name__ == "DALoss":
         loss, mse, nll = loss_func(model(xb), yb)
@@ -46,6 +47,17 @@ def fit(epochs, batch_size, model, loss_func, opt, train_ds, valid_ds, patience,
             break
 
     early_stopping.save()
+
+
+def loss_init(epochs, batch_size, model, loss_func, opt, train_ds, valid_ds, patience, checkpoint_file):
+    """ fit the model on the training_old data given the loss, optimizer, batch size, epochs, and earlystopping patience """
+    train_dl, valid_dl = create_dataloaders_from_datasets(train_ds, valid_ds, batch_size)
+
+    early_stopping = EarlyStopping(patience=patience,
+                                   path=checkpoint_file)
+
+    model.eval()
+    early_stopping, res = evaluate(0, early_stopping, model, loss_func, [train_dl, valid_dl])
 
 
 def evaluate(epoch, early_stopping, model, loss_func, dls):

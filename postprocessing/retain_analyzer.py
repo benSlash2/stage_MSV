@@ -92,6 +92,13 @@ class RetainAnalyzer():
         mean_max_contrib, std_max_contrib = np.mean(max_contrib, axis=0), np.std(max_contrib, axis=0)
         return mean_max_contrib, std_max_contrib
 
+    def compute_mean_contrib(self, subject, eval_set):
+        contrib_an = self.compute_contribution_subject(subject, eval_set)
+        mean_contrib = [np.mean(contrib_an_split, axis=0) for contrib_an_split in contrib_an]
+        mean_contrib = [np.flip(mean_contrib_split, axis=0) for mean_contrib_split in mean_contrib]
+        mean_mean_contrib, std_mean_contrib = np.mean(mean_contrib, axis=0), np.std(mean_contrib, axis=0)
+        return mean_mean_contrib, std_mean_contrib
+
     def compute_mean_std_max_contrib(self, subject, eval_set="test"):
         if subject == "all":
             max_contrib = []
@@ -103,6 +110,18 @@ class RetainAnalyzer():
             mean_max_contrib, std_max_contrib = self.compute_max_contrib(subject, eval_set)
 
         return mean_max_contrib, std_max_contrib
+
+    def compute_mean_std_mean_contrib(self, subject, eval_set="test"):
+        if subject == "all":
+            mean_contrib = []
+            for sbj in misc.datasets.datasets[self.dataset]["subjects"]:
+                mean_mean_contrib_sbj, _ = self.compute_mean_contrib(sbj, eval_set)
+                mean_contrib.append(mean_mean_contrib_sbj)
+            mean_mean_contrib, std_mean_contrib = np.mean(mean_contrib, axis=0), np.std(mean_contrib, axis=0)
+        else:
+            mean_mean_contrib, std_mean_contrib = self.compute_mean_contrib(subject, eval_set)
+
+        return mean_mean_contrib, std_mean_contrib
 
     def _data_from_eval_set(self, subject, eval_set):
         if eval_set == "train":
@@ -301,3 +320,40 @@ class RetainAnalyzer():
         plt.ylabel("Maximum absolute normalized contribution")
         plt.legend()
         plt.title("Maximum absolute normalized contribution for dataset " + self.dataset + " and subject " + subject)
+
+
+    def plot_mean_contribution(self, subject="all", eval_set="test"):
+        mean_mean_contrib, std_mean_contrib = self.compute_mean_std_mean_contrib(subject, eval_set)
+
+        time = np.arange(0, self.params["hist"], cs.freq)
+
+        plt.figure()
+        plt.plot(time, mean_mean_contrib[:, 0], color="blue", label="glycemia")
+        plt.fill_between(time, mean_mean_contrib[:, 0] - std_mean_contrib[:, 0],
+                         mean_mean_contrib[:, 0] + std_mean_contrib[:, 0], alpha=0.5, edgecolor='blue', facecolor="blue")
+
+        plt.plot(time, mean_mean_contrib[:, 2], color="green", label="insulin")
+        plt.fill_between(time, mean_mean_contrib[:, 2] - std_mean_contrib[:, 2],
+                         mean_mean_contrib[:, 2] + std_mean_contrib[:, 2], alpha=0.5, edgecolor='green',
+                         facecolor="green")
+
+        plt.plot(time, mean_mean_contrib[:, 1], color="red", label="CHO")
+        plt.fill_between(time, mean_mean_contrib[:, 1] - std_mean_contrib[:, 1],
+                         mean_mean_contrib[:, 1] + std_mean_contrib[:, 1], alpha=0.5, edgecolor='red', facecolor="red")
+
+        plt.plot(time, mean_mean_contrib[:, 3], color="yellow", label="mets")
+        plt.fill_between(time, mean_mean_contrib[:, 3] - std_mean_contrib[:, 3],
+                         mean_mean_contrib[:, 3] + std_mean_contrib[:, 3], alpha=0.5, edgecolor='yellow', facecolor="yellow")
+
+        plt.plot(time, mean_mean_contrib[:, 4], color="purple", label="calories")
+        plt.fill_between(time, mean_mean_contrib[:, 4] - std_mean_contrib[:, 4],
+                         mean_mean_contrib[:, 4] + std_mean_contrib[:, 4], alpha=0.5, edgecolor='purple', facecolor="purple")
+
+        plt.plot(time, mean_mean_contrib[:, 5], color="orange", label="heartrate")
+        plt.fill_between(time, mean_mean_contrib[:, 5] - std_mean_contrib[:, 5],
+                         mean_mean_contrib[:, 5] + std_mean_contrib[:, 5], alpha=0.5, edgecolor='orange', facecolor="orange")
+
+        plt.xlabel("History [min]")
+        plt.ylabel("Mean absolute normalized contribution")
+        plt.legend()
+        plt.title("Mean absolute normalized contribution for dataset " + self.dataset + " and subject " + subject)

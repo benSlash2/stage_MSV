@@ -21,6 +21,9 @@ def create_samples_idiab(data, ph, hist, day_len):
     m = np.array([data.loc[i:i + n_samples - 1, "mets"] for i in range(hist)]).transpose()
     cal = np.array([data.loc[i:i + n_samples - 1, "calories"] for i in range(hist)]).transpose()
     h = np.array([data.loc[i:i + n_samples - 1, "heartrate"] for i in range(hist)]).transpose()
+    # st = np.array([data.loc[i:i + n_samples - 1, "steps"] for i in range(hist)]).transpose()
+
+
     # m = np.array([data.loc[i + hist_2:i + hist_2 + n_samples - 1, "mets"] for i in range(hist_2)]).transpose()
     # cal = np.array([data.loc[i + hist_2:i + hist_2 + n_samples - 1, "calories"] for i in range(hist_2)]).transpose()
     # h = np.array([data.loc[i + hist_2:i + hist_2 + n_samples - 1, "heartrate"] for i in range(hist_2)]).transpose()

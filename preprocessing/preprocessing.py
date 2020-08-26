@@ -6,6 +6,7 @@ from preprocessing.cleaning.nans_filling import fill_nans, fill_nans_idiab
 from preprocessing.loading.loading_ohio import load_ohio
 from preprocessing.loading.loading_t1dms import load_t1dms
 from preprocessing.loading.loading_idiab import load_idiab
+from preprocessing.data_augmentation.physiological_features import AOB, CPB, IOB
 import misc.datasets
 from misc.utils import printd
 from preprocessing.resampling import resample, resample_idiab
@@ -76,16 +77,20 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
+    printd("Preprocessing " + dataset + subject + "...")
     data = load_idiab(dataset, subject)
     data = remove_anomalies_idiab(data)
     data = resample_idiab(data, cs.freq)
     data = remove_last_day(data)
+    # data["CHO"] = CPB(data, cs.C_bio, cs.t_max)
+    # data["insulin"] = IOB(data, cs.K_DIA)
+    # dat["steps"] = AOB(data, cs.k_s)
     data = create_samples_idiab(data, ph, hist, day_len)
     data = fill_nans_idiab(data, day_len, n_days_test)
 
-    # for col in data.columns:
-    #     if "calories" in col or "mets" in col or "heartrate" in col:
-    #         data = data.drop(col, axis=1)
+    for col in data.columns:
+        if "calories" in col or "heartrate" in col:
+            data = data.drop(col, axis=1)
 
     train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
     [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
@@ -141,7 +146,7 @@ def preprocessing_source_multi(source_datasets, target_dataset, target_subject, 
             if target_dataset == source_dataset and target_subject == source_subject:
                 continue
 
-            printd("Preprocessing " + source_dataset + source_subject + "...")
+            # printd("Preprocessing " + source_dataset + source_subject + "...")
 
             n_days_test = misc.datasets.datasets[source_dataset]["n_days_test"]
             train_sbj, valid_sbj, test_sbj, scalers_sbj = preprocessing_per_dataset[source_dataset](source_dataset,

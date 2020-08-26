@@ -51,7 +51,6 @@ def main_target_finetuning(source_dataset, target_dataset, target_subject, Model
     else:
         save_file = None
 
-
     train, valid, test, scalers = preprocessing(target_dataset, target_subject, ph_f, hist_f, day_len_f)
 
     raw_results = make_predictions_tl(target_subject, Model, params, ph_f, train, valid, test,
@@ -59,6 +58,32 @@ def main_target_finetuning(source_dataset, target_dataset, target_subject, Model
 
     return evaluation(raw_results, scalers, source_dataset, target_dataset, target_subject, Model, params, exp, plot,
                "target_finetuning")
+
+
+def end_to_end(source_dataset, target_dataset, target_subject, Model, params, weights_exp, eval_mode, exp,
+                           plot):
+    hist_f = params["hist"] // freq
+    save_file = compute_weights_file(Model, source_dataset, target_dataset, target_subject, weights_exp)
+
+    train_m, valid_m, test_m, scalers_m = preprocessing_source_multi(source_dataset, target_dataset, target_subject, ph_f,
+                                                             hist_f, day_len_f)
+    make_predictions_tl(target_subject, Model, params, ph_f, train_m, valid_m, test_m,
+                        eval_mode=eval_mode, fit=True, save_model_file=save_file)
+
+    train, valid, test, scalers = preprocessing(target_dataset, target_subject, ph_f, hist_f, day_len_f)
+
+    raw_results = make_predictions_tl(target_subject, Model, params, ph_f, train, valid, test,
+                                      weights_file=save_file, eval_mode=eval_mode, fit=False, save_model_file=None)
+
+    evaluation(raw_results, scalers, source_dataset, target_dataset, target_subject, Model, params, exp, plot,
+               "target_global")
+
+    raw_results_2 = make_predictions_tl(target_subject, Model, params, ph_f, train, valid, test,
+                                      weights_file=save_file, eval_mode=eval_mode, fit=True,
+                                      save_model_file=None)
+
+    return evaluation(raw_results_2, scalers, source_dataset, target_dataset, target_subject, Model, params, exp, plot,
+                      "target_finetuning")
 
 
 def evaluation(raw_results, scalers, source_dataset, target_dataset, target_subject, Model, params, exp, plot, tl_mode):
@@ -98,6 +123,16 @@ def process_main_args(args):
         printd("source_training", sbj_msg)
         main_source_training(args.source_dataset, args.target_dataset, args.target_subject, Model, params, args.weights,
                              args.eval_mode)
+    elif args.tl_mode == "source_training_test":
+        printd("source_training_test", sbj_msg)
+        main_source_training(args.source_dataset, args.target_dataset, args.target_subject, Model, params, args.weights,
+                             args.eval_mode)
+        main_target_global(args.source_dataset, args.target_dataset, args.target_subject, Model, params,
+                           args.weights, args.eval_mode, args.exp, args.plot)
+    elif args.tl_mode == "end_to_end_0":
+        printd("end_to_end_0", sbj_msg)
+        end_to_end(args.source_dataset, args.target_dataset, args.target_subject, Model, params,
+                           args.weights, args.eval_mode, args.exp, args.plot)
     elif args.tl_mode == "target_training":
         printd("target_training", sbj_msg)
         main_target_training(args.source_dataset, args.target_dataset, args.target_subject, Model, params,
