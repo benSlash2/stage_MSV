@@ -22,8 +22,8 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
 
         res = model.predict(dataset=eval_mode)
         results.append(res)
-        if eval_mode == "valid":
-            break
+        # if eval_mode == "valid":
+        #     break
     return results
 
 def make_predictions(subject, model_class, params, ph, train, valid, test, mode="valid",save_model_file=None):

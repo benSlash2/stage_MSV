@@ -2,12 +2,15 @@ from misc.utils import locate_model, locate_params, printd
 import sys
 import argparse
 import os
+import torch
+import numpy as np
 from misc.constants import *
 from preprocessing.preprocessing import preprocessing, preprocessing_source_multi
 from processing.cross_validation import make_predictions_tl
 from postprocessing.postprocessing import postprocessing
 from postprocessing.results import ResultsSubject
-
+torch.manual_seed(0)
+np.random.seed(0)
 
 def main_target_training(source_dataset, target_dataset, target_subject, Model, params, eval_mode, exp, plot):
     hist_f = params["hist"] // freq

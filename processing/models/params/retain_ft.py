@@ -5,7 +5,7 @@ parameters = {
     "hist": 180,
 
     # model hyperparameters
-    "n_features_emb": 16, #64,
+    "n_features_emb": 64, #64,
     "n_hidden_rnn": 128,
     "n_layers_rnn": 1,#1
     "reverse_time": False,

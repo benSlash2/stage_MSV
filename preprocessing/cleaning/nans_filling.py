@@ -108,7 +108,7 @@ def fill_nans_idiab(data, day_len, n_days_test):
 
     # fill insulin and CHO nans with 0
     for col in data.columns:
-        if "insulin" in col or "CHO" in col:
+        if "insulin" in col or "CHO" in col or "steps" in col:
             data[col] = data[col].fillna(0)
         if "heartrate" in col:
             heart_mean = data.drop(data.loc[data[col] < 0].index, axis=0).mean()[col]

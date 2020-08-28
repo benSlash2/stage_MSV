@@ -21,7 +21,7 @@ def create_samples_idiab(data, ph, hist, day_len):
     m = np.array([data.loc[i:i + n_samples - 1, "mets"] for i in range(hist)]).transpose()
     cal = np.array([data.loc[i:i + n_samples - 1, "calories"] for i in range(hist)]).transpose()
     h = np.array([data.loc[i:i + n_samples - 1, "heartrate"] for i in range(hist)]).transpose()
-    # st = np.array([data.loc[i:i + n_samples - 1, "steps"] for i in range(hist)]).transpose()
+    st = np.array([data.loc[i:i + n_samples - 1, "steps"] for i in range(hist)]).transpose()
 
 
     # m = np.array([data.loc[i + hist_2:i + hist_2 + n_samples - 1, "mets"] for i in range(hist_2)]).transpose()
@@ -30,12 +30,12 @@ def create_samples_idiab(data, ph, hist, day_len):
     new_columns = np.r_[["time"], ["glucose_" + str(i) for i in range(hist)], ["CHO_" + str(i) for i in range(hist)], [
         "insulin_" + str(i) for i in range(hist)], ["mets_" + str(i) for i in range(hist)], ["calories_" + str(i) for
                                                                                              i in range(hist)],
-                        ["heartrate_" + str(i) for i in range(hist)], ["y"]]
+                        ["heartrate_" + str(i) for i in range(hist)], ["steps" + str(i) for i in range(hist)], ["y"]]
     # new_columns = np.r_[["time"], ["glucose_" + str(i) for i in range(hist)], ["CHO_" + str(i) for i in range(hist)], [
     #     "insulin_" + str(i) for i in range(hist)], ["mets_" + str(i) for i in range(hist_2)], ["calories_" + str(i) for i in range(hist_2)],
     #                     ["heartrate_" + str(i) for i in range(hist_2)], ["y"]]
 
-    new_data = pd.DataFrame(data=np.c_[t, g, c, i, m, cal, h, y], columns=new_columns)
+    new_data = pd.DataFrame(data=np.c_[t, g, c, i, m, cal, h, st, y], columns=new_columns)
     new_data["datetime"] = d
     new_data = new_data.loc[:, np.r_[["datetime"], new_columns]]  # reorder the columns, with datetime first
 

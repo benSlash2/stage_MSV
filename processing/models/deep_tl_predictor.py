@@ -84,6 +84,8 @@ class DeepTLPredictor(Predictor):
         mets = data.loc[:, [col for col in data.columns if "mets" in col]].values
         cal = data.loc[:, [col for col in data.columns if "calories" in col]].values
         heart = data.loc[:, [col for col in data.columns if "heartrate" in col]].values
+        steps = data.loc[:, [col for col in data.columns if "steps" in col]].values
+
 
         # reshape timeseries in (n_samples, hist, 1) shape and concatenate
         g = g.reshape(-1, g.shape[1], 1)
@@ -92,9 +94,10 @@ class DeepTLPredictor(Predictor):
         mets = mets.reshape(-1, g.shape[1], 1)
         cal = cal.reshape(-1, g.shape[1], 1)
         heart = heart.reshape(-1, g.shape[1], 1)
+        steps = steps.reshape(-1, g.shape[1], 1)
 
         a = 0
-        for i in [g, cho, ins, mets, cal, heart]:
+        for i in [g, cho, ins, mets, cal, heart, steps]:
             if i.size != 0:
                 if a == 0:
                     x = i
