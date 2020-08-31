@@ -89,7 +89,7 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     data = fill_nans_idiab(data, day_len, n_days_test)
 
     for col in data.columns:
-        if "calories" in col or "heartrate" in col or "mets" in col or "steps" in col:
+        if "calories" in col or "heartrate" in col or "steps" in col:
             data = data.drop(col, axis=1)
 
     train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)

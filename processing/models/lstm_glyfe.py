@@ -53,13 +53,28 @@ class LSTM_GLYFE(Predictor):
         g = data.loc[:, [col for col in data.columns if "glucose" in col]].values
         cho = data.loc[:, [col for col in data.columns if "CHO" in col]].values
         ins = data.loc[:, [col for col in data.columns if "insulin" in col]].values
+        mets = data.loc[:, [col for col in data.columns if "mets" in col]].values
+        cal = data.loc[:, [col for col in data.columns if "calories" in col]].values
+        heart = data.loc[:, [col for col in data.columns if "heartrate" in col]].values
+        steps = data.loc[:, [col for col in data.columns if "steps" in col]].values
 
         # reshape timeseties in (n_samples, hist, 1) shape and concatenate
         g = g.reshape(-1, g.shape[1], 1)
         cho = cho.reshape(-1, g.shape[1], 1)
         ins = ins.reshape(-1, g.shape[1], 1)
+        mets = mets.reshape(-1, g.shape[1], 1)
+        cal = cal.reshape(-1, g.shape[1], 1)
+        heart = heart.reshape(-1, g.shape[1], 1)
+        steps = steps.reshape(-1, g.shape[1], 1)
 
-        x = np.concatenate([g, cho, ins], axis=2)
+        a = 0
+        for i in [g, cho, ins, mets, cal, heart, steps]:
+            if i.size != 0:
+                if a == 0:
+                    x = i
+                else:
+                    x = np.concatenate([x, i], axis=2)
+                a += 1
 
         return x, y, t
 

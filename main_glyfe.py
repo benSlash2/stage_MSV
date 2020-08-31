@@ -4,12 +4,16 @@ from preprocessing.preprocessing import preprocessing
 import sys
 import argparse
 from os.path import join
+import torch
+import numpy as np
 from pydoc import locate
 import misc.constants as cs
 from misc.utils import printd
 from processing.cross_validation import make_predictions, find_best_hyperparameters
 from misc.utils import locate_params, locate_model, locate_search
 import os
+torch.manual_seed(0)
+np.random.seed(0)
 """ This is the source code the benchmark GLYFE for glucose prediction in diabetes.
     For more infos on how to use it, go to its Github repository at: https://github.com/dotXem/GLYFE """
 

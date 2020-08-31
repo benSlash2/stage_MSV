@@ -14,12 +14,12 @@ def AOB(data, k_s):
             AOB[i:] += steps[i] * np.exp(-k_s * 5 * t)
             # for j in range(i, n):
             #     AOB[j] += steps[i]*np.exp(-k_s * 5 * (j-i))
-    # plt.plot(AOB, 'r--', label='AOB(t)')
-    # plt.plot(steps, 'b:', label="steps(t)")
-    # plt.ylabel('values')
-    # plt.xlabel('time')
-    # plt.legend(loc='best')
-    # plt.show()
+    plt.plot(AOB, 'r--', label='AOB(t)')
+    plt.plot(steps, 'b:', label="steps(t)")
+    plt.ylabel('values')
+    plt.xlabel('time')
+    plt.legend(loc='best')
+    plt.show()
     return AOB
 
 
@@ -45,18 +45,18 @@ def CPB(data, C_bio, t_max):
     for i in ind:
         if CHO[i] != 0:
             Ra = R_a(data, i, C_bio, t_max)
-            t = np.arange(i,n)
+            t = np.arange(i, n)
             K = np.array([np.sum(Ra[i:j+1]) for j in t])
             CPB[i:] += CHO[i] * C_bio - 5 * K
             # for j in range(i, n):
             #     K = Ra[range(i, j+1)].sum()
             #     CPB[j] += CHO[i] * C_bio - 5 * K
-    # plt.plot(CPB, 'r--', label='CPB(t)')
-    # plt.plot(CHO, 'b:', label='CHO(t)')
-    # plt.ylabel('values')
-    # plt.xlabel('time')
-    # plt.legend(loc='best')
-    # plt.show()
+    plt.plot(CPB, 'r--', label='CPB(t)')
+    plt.plot(CHO, 'b:', label='CHO(t)')
+    plt.ylabel('values')
+    plt.xlabel('time')
+    plt.legend(loc='best')
+    plt.show()
     return CPB
 
 
@@ -86,12 +86,12 @@ def IOB(data, K_DIA):
         y[i] = z[1][1]
         z0 = z[1]
 
-    # plt.plot(t, u, 'r--', label='u(t)')
-    # plt.plot(t, x + y, 'b:', label='IOB(t)')
-    # plt.ylabel('values')
-    # plt.xlabel('time')
-    # plt.legend(loc='best')
-    # plt.show()
+    plt.plot(t, u, 'r--', label='u(t)')
+    plt.plot(t, x + y, 'b:', label='IOB(t)')
+    plt.ylabel('values')
+    plt.xlabel('time')
+    plt.legend(loc='best')
+    plt.show()
 
     return x + y
 
