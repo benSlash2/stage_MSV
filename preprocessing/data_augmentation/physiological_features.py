@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
 
 
@@ -9,11 +9,9 @@ def AOB(data, k_s):
     n = ind.size
     AOB = np.zeros(n)
     for i in ind:
-        if steps[i] != 0:
+        if steps[i] != 0 and np.isnan(steps[i]) == 0:
             t = np.arange(n - i)
             AOB[i:] += steps[i] * np.exp(-k_s * 5 * t)
-            # for j in range(i, n):
-            #     AOB[j] += steps[i]*np.exp(-k_s * 5 * (j-i))
     plt.plot(AOB, 'r--', label='AOB(t)')
     plt.plot(steps, 'b:', label="steps(t)")
     plt.ylabel('values')
@@ -28,12 +26,8 @@ def R_a(data, i, C_bio, t_max):
     ind = data.index
     n = ind.size
     Ra = np.zeros(n)
-    # for i in ind:
-    #     if CHO[i] != 0:
     t = np.arange(n - i)
     Ra[i:] = CHO[i] * C_bio * 5 * t * np.exp(- 5 * t / t_max) / t_max ** 2
-    # for j in range(i, n):
-    #     Ra[j] = CHO[i] * C_bio * 5 * (j - i) * np.exp(- 5 * (j - i) / t_max) / t_max ** 2
     return Ra
 
 
@@ -42,15 +36,11 @@ def CPB(data, C_bio, t_max):
     ind = data.index
     n = ind.size
     CPB = np.zeros(n)
+    Ra = lambda x: quad(lambda t: C_bio * t * np.exp(- t / t_max) / t_max ** 2, 0, 5 * x)[0]
+    K = np.array([Ra(xi) for xi in ind])
     for i in ind:
-        if CHO[i] != 0:
-            Ra = R_a(data, i, C_bio, t_max)
-            t = np.arange(i, n)
-            K = np.array([np.sum(Ra[i:j+1]) for j in t])
-            CPB[i:] += CHO[i] * C_bio - 5 * K
-            # for j in range(i, n):
-            #     K = Ra[range(i, j+1)].sum()
-            #     CPB[j] += CHO[i] * C_bio - 5 * K
+        if CHO[i] != 0 and np.isnan(CHO[i]) == 0:
+            CPB[i:] += CHO[i] * (C_bio - K[0:n-i])
     plt.plot(CPB, 'r--', label='CPB(t)')
     plt.plot(CHO, 'b:', label='CHO(t)')
     plt.ylabel('values')

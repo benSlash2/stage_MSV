@@ -10,7 +10,7 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
     results = []
     for i, (train_i, valid_i, test_i) in enumerate(zip(train, valid, test)):
         model = model_class(subject, ph, params, train_i, valid_i, test_i)
-        model.loss_init
+        # model.loss_init
         if weights_file:
             model.load(weights_file)
 
@@ -43,6 +43,7 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
     """
     results = []
     for i, (train_i, valid_i, test_i) in enumerate(zip(train, valid, test)):
+
         model = model_class(subject, ph, params, train_i, valid_i, test_i)
         model.fit()
         res = model.predict(dataset=mode)
@@ -51,8 +52,8 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         if save_model_file is not None:
             model.save(save_model_file + "_" + str(i))
 
-        # if mode == "valid":
-        #     break
+        if mode == "test":
+            break
     return results
 
 
