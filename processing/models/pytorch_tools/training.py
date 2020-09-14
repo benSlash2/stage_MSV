@@ -17,7 +17,10 @@ def loss_batch(model, loss_func, xb, yb, opt=None, plot_gradient=False):
         if plot_gradient:
             plot_grad_flow(model.named_parameters())
         opt.step()
-        opt.zero_grad()
+        for param in model.parameters():
+            param.grad = None
+        # opt.zero_grad()
+        # model.zero_grad()
 
     if loss_func.__class__.__name__ == "DALoss":
         return loss.item(), mse.item(), nll.item(), len(xb)
@@ -86,7 +89,6 @@ def evaluate(epoch, early_stopping, model, loss_func, dls):
     printd(*res)
 
     return early_stopping, res
-
 
 def predict(model, ds):
     """ make the prediction """

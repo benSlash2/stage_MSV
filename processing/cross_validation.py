@@ -52,8 +52,8 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         if save_model_file is not None:
             model.save(save_model_file + "_" + str(i))
 
-        if mode == "test":
-            break
+        # if mode == "valid":
+        #     break
     return results
 
 

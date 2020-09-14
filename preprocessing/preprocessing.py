@@ -63,6 +63,50 @@ def preprocessing_t1dms(dataset, subject, ph, hist, day_len, n_days_test):
     return train, valid, test, scalers
 
 
+def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
+    """
+    OhioT1DM dataset preprocessing pipeline:
+    loading -> samples creation -> cleaning (1st) -> splitting -> cleaning (2nd) -> standardization
+
+    First cleaning is done before splitting to speedup the preprocessing
+
+    :param dataset: name of the dataset, e.g. "idiab"
+    :param subject: id of the subject, e.g. "1"
+    :param ph: prediction horizon, e.g. 30
+    :param hist: history length, e.g. 60
+    :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
+    :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
+    """
+    printd("Preprocessing " + dataset + subject )
+    data = load_idiab(dataset, subject)
+    data = remove_anomalies_idiab(data)
+    data = resample_idiab(data, cs.freq)
+    data = remove_last_day(data)
+    data["CPB"] = CPB(data, cs.C_bio, cs.t_max)
+    data["IOB"] = IOB(data, cs.K_DIA)
+    data["AOB"] = AOB(data, cs.k_s)
+    data = create_samples_idiab(data, ph, hist, day_len)
+    n_days_test = misc.datasets.datasets[dataset]["n_days_test"]
+    data = fill_nans_idiab(data, day_len, n_days_test)
+    return data
+
+
+def preprocessing_idiab_select(data, dataset, day_len, features):
+    all_features = ["CHO", "insulin", "calories", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
+    to_drop = [ele for ele in all_features if ele not in features]
+    for col in data.columns:
+        for ele in to_drop:
+            if ele in col:
+                data = data.drop(col, axis=1)
+                break
+
+    train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
+    [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
+    train, valid, test, scalers = standardize(train, valid, test)
+    print(test[0].shape)
+    return train, valid, test, scalers
+
+
 def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     """
     OhioT1DM dataset preprocessing pipeline:
@@ -82,15 +126,20 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     data = remove_anomalies_idiab(data)
     data = resample_idiab(data, cs.freq)
     data = remove_last_day(data)
-    data["CHO"] = CPB(data, cs.C_bio, cs.t_max)
+    # data["CHO"] = CPB(data, cs.C_bio, cs.t_max)
     # data["insulin"] = IOB(data, cs.K_DIA)
     # data["steps"] = AOB(data, cs.k_s)
     data = create_samples_idiab(data, ph, hist, day_len)
     data = fill_nans_idiab(data, day_len, n_days_test)
-
+    to_drop = ["calories", "heartrate", "mets", "steps"]
     for col in data.columns:
-        if "calories" in col or "heartrate" in col or "mets" in col or "steps" in col:
-            data = data.drop(col, axis=1)
+        for ele in to_drop:
+            if ele in col:
+                data = data.drop(col, axis=1)
+                break
+
+    # if "calories" in col or "heartrate" in col or "mets" in col or "steps" in col:
+    #         data = data.drop(col, axis=1)
 
     train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
     [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]

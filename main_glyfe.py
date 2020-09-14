@@ -3,6 +3,7 @@ from postprocessing.postprocessing import postprocessing
 from preprocessing.preprocessing import preprocessing
 import sys
 import argparse
+import time
 from os.path import join
 import torch
 import numpy as np
@@ -13,7 +14,7 @@ from processing.cross_validation import make_predictions, find_best_hyperparamet
 from misc.utils import locate_params, locate_model, locate_search
 import os
 torch.manual_seed(0)
-np.random.seed(0)
+# np.random.seed(0)
 """ This is the source code the benchmark GLYFE for glucose prediction in diabetes.
     For more infos on how to use it, go to its Github repository at: https://github.com/dotXem/GLYFE """
 
@@ -33,6 +34,7 @@ def main(dataset, subject, model, params, exp, mode, log, ph, plot, save=False):
 
     """ PREPROCESSING """
     train, valid, test, scalers = preprocessing(dataset, subject, ph_f, hist_f, day_len_f)
+    start = time.time()
 
     """ MODEL TRAINING & TUNING """
     if search:
@@ -51,6 +53,8 @@ def main(dataset, subject, model, params, exp, mode, log, ph, plot, save=False):
     """ EVALUATION """
     results = ResultsSubject(model, exp, ph, dataset, subject, params=params, results=raw_results)
     printd(results.compute_mean_std_results())
+    end = time.time()
+    printd("Time elapsed : " + str(end - start) + " seconds")
     if plot:
         results.plot(0)
 

@@ -57,4 +57,4 @@ class EarlyStopping:
     #     self.val_loss_min = val_loss
 
     def save(self):
-        torch.save(self.best_model,self.path)
+        torch.save(self.best_model, self.path)

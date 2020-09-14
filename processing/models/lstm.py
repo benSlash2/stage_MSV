@@ -30,7 +30,7 @@ class LSTM(DeepTLPredictor):
             self.params["patience"], self.checkpoint_file)
 
 
-    def predict(self, dataset, clear=True):
+    def predict(self, dataset, clear=False):
         # get the data for which we make the predictions
         x, y, t = self._str2dataset(dataset)
         ds = self._to_tensor_ds(x, y)

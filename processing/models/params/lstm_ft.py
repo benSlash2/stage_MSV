@@ -9,7 +9,7 @@ parameters = {
     "dropout_weights": 0.0,
     "dropout_layer": 0.0,
     "epochs": 500,
-    "batch_size": 50,
+    "batch_size": 1000, #50,
     "lr": 1e-3,
     "l2": 1e-4,
     "patience": 50,
