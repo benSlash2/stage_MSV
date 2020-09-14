@@ -65,7 +65,8 @@ class ResultsDataset():
         """
         mean, std = self.compute_results()
         if table == "cg_ega":
-            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu", "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
             mean = [mean[k] * 100 for k in keys]
             std = [std[k] * 100 for k in keys]
         elif table == "general":
@@ -74,7 +75,6 @@ class ResultsDataset():
             std = [std[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else std[k] * 100 for k in acc_keys]
 
         print_latex(mean, std, label=self.model)
-
 
 
 class ResultsDatasetTransfer(ResultsDataset):
@@ -93,7 +93,8 @@ class ResultsDatasetTransfer(ResultsDataset):
         """
         mean, std = self.compute_results()
         if table == "cg_ega":
-            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu", "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
             mean = [mean[k] * 100 for k in keys]
             std = [std[k] * 100 for k in keys]
         elif table == "general":
@@ -105,7 +106,8 @@ class ResultsDatasetTransfer(ResultsDataset):
 
 
 class ResultsSubject():
-    def __init__(self, model, experiment, ph, dataset, subject, params=None, results=None, legacy=False):
+    def __init__(self, model, experiment, ph, dataset, subject, params=None, results=None, legacy=False, study=False,
+                 mode="valid"):
         """
         Object that compute all the performances of a given subject for a given model and experiment and prediction horizon
         :param model: name of the model (e.g., "base")
@@ -126,25 +128,33 @@ class ResultsSubject():
 
         if results is None and params is None:
             if not legacy:
-                self.params, self.results = self.load_raw_results(legacy)
+                self.params, self.results = self.load_raw_results(study, legacy)
             else:
-                self.results = self.load_raw_results(legacy)
+                self.results = self.load_raw_results(study, mode, legacy)
         else:
             self.results = results
             self.params = params
-            self.save_raw_results()
+            self.save_raw_results(study, mode)
 
-    def load_raw_results(self, legacy=False, transfer=False):
+    def load_raw_results(self, from_study, mode, legacy=False, transfer=False):
         """
         Load the results from previous instance of ResultsSubject that has saved the them
         :param legacy: if legacy object shall  be used
         :return: (params dictionary), dataframe with ground truths and predictions
         """
-        file = self.dataset + "_" + self.subject + ".npy"
-        if not transfer:
-            path = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph), file)
+        if not from_study:
+            file = self.dataset + "_" + self.subject + ".npy"
+            if not transfer:
+                path = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph), file)
+            else:
+                path = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph), file)
         else:
-            path = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph), file)
+            if not transfer:
+                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+                                    self.experiment, "results.npy")
+            else:
+                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+                                    self.experiment, "results.npy")
 
         if not legacy:
             params, results = np.load(path, allow_pickle=True)
@@ -165,17 +175,23 @@ class ResultsSubject():
                 dfs.append(df)
             return dfs
 
-    def save_raw_results(self):
+    def save_raw_results(self, to_study, mode):
         """
         Save the results and params
         :return:
         """
-        dir = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph))
-        Path(dir).mkdir(parents=True, exist_ok=True)
+        if not to_study:
+            dir = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph))
+            Path(dir).mkdir(parents=True, exist_ok=True)
+            saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
+            np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), [self.params, saveable_results])
+        else:
+            dir = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+                               self.experiment)
+            Path(dir).mkdir(parents=True, exist_ok=True)
+            saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
+            np.save(os.path.join(dir, "results.npy"), [self.params, saveable_results])
 
-        saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
-
-        np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), [self.params, saveable_results])
         # np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), np.array())
 
     def compute_raw_results(self, split_by_day=False):

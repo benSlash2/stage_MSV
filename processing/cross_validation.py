@@ -50,7 +50,7 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         results.append(res)
 
         if save_model_file is not None:
-            model.save(save_model_file + "_" + str(i))
+            model.save(save_model_file + "_" + str(i) + ".pt")
 
         # if mode == "valid":
         #     break
