@@ -45,17 +45,9 @@ def main(dataset, model, params, exp, mode, log, ph, plot, save=False):
             train, valid, test, scalers = preprocessing_idiab_select(data, dataset,day_len_f, ele)
             for j in range(10):
                 torch.manual_seed(j)
-                printd(dataset, "Patient" + str(i), model, params, exp, mode, log, ph, plot)
-
-
-
-                """ PREPROCESSING """
-                train, valid, test, scalers = preprocessing(dataset, i, ph_f, hist_f, day_len_f)
-                start = time.time()
-
                 """ MODEL TRAINING & TUNING """
                 if search:
-                    params = find_best_hyperparameters(subject, model_class, params, search, ph_f, train, valid, test)
+                    params = find_best_hyperparameters(i, model_class, params, search, ph_f, train, valid, test)
 
                 if save:
                     dir = os.path.join(cs.path, "processing", "models", "weights", model_class.__name__, exp)
@@ -63,15 +55,14 @@ def main(dataset, model, params, exp, mode, log, ph, plot, save=False):
                 else:
                     file = None
 
-                raw_results = make_predictions(subject, model_class, params, ph_f, train, valid, test, mode=mode, save_model_file=file)
+                raw_results = make_predictions(i, model_class, params, ph_f, train, valid, test, mode=mode, save_model_file=file)
                 """ POST-PROCESSING """
                 raw_results = postprocessing(raw_results, scalers, dataset)
 
                 """ EVALUATION """
-                results = ResultsSubject(model, exp, ph, dataset, subject, params=params, results=raw_results)
+                results = ResultsSubject(model, exp, ph, dataset, i, params=params, results=raw_results)
                 printd(results.compute_mean_std_results())
-                end = time.time()
-                printd("Time elapsed : " + str(end - start) + " seconds")
+
                 if plot:
                     results.plot(0)
 
