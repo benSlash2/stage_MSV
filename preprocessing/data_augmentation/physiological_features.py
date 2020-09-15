@@ -3,7 +3,7 @@ from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
 
 
-def AOB(data, k_s):
+def AOB(data, k_s, plot=False):
     steps = data["steps"]
     ind = data.index
     n = ind.size
@@ -12,26 +12,17 @@ def AOB(data, k_s):
         if steps[i] != 0 and np.isnan(steps[i]) == 0:
             t = np.arange(n - i)
             AOB[i:] += steps[i] * np.exp(-k_s * 5 * t)
-    plt.plot(AOB, 'r--', label='AOB(t)')
-    plt.plot(steps, 'b:', label="steps(t)")
-    plt.ylabel('values')
-    plt.xlabel('time')
-    plt.legend(loc='best')
-    plt.show()
+    if plot:
+        plt.plot(AOB, 'r--', label='AOB(t)')
+        plt.plot(steps, 'b:', label="steps(t)")
+        plt.ylabel('values')
+        plt.xlabel('time')
+        plt.legend(loc='best')
+        plt.show()
     return AOB
 
 
-def R_a(data, i, C_bio, t_max):
-    CHO = data["CHO"]
-    ind = data.index
-    n = ind.size
-    Ra = np.zeros(n)
-    t = np.arange(n - i)
-    Ra[i:] = CHO[i] * C_bio * 5 * t * np.exp(- 5 * t / t_max) / t_max ** 2
-    return Ra
-
-
-def CPB(data, C_bio, t_max):
+def CPB(data, C_bio, t_max, plot=False):
     CHO = data["CHO"]
     ind = data.index
     n = ind.size
@@ -41,16 +32,17 @@ def CPB(data, C_bio, t_max):
     for i in ind:
         if CHO[i] != 0 and np.isnan(CHO[i]) == 0:
             CPB[i:] += CHO[i] * (C_bio - K[0:n-i])
-    plt.plot(CPB, 'r--', label='CPB(t)')
-    plt.plot(CHO, 'b:', label='CHO(t)')
-    plt.ylabel('values')
-    plt.xlabel('time')
-    plt.legend(loc='best')
-    plt.show()
+    if plot:
+        plt.plot(CPB, 'r--', label='CPB(t)')
+        plt.plot(CHO, 'b:', label='CHO(t)')
+        plt.ylabel('values')
+        plt.xlabel('time')
+        plt.legend(loc='best')
+        plt.show()
     return CPB
 
 
-def IOB(data, K_DIA):
+def IOB(data, K_DIA, plot=False):
 
     def model(z,t,u):
         x = z[0]
@@ -75,13 +67,13 @@ def IOB(data, K_DIA):
         x[i] = z[1][0]
         y[i] = z[1][1]
         z0 = z[1]
-
-    plt.plot(t, u, 'r--', label='u(t)')
-    plt.plot(t, x + y, 'b:', label='IOB(t)')
-    plt.ylabel('values')
-    plt.xlabel('time')
-    plt.legend(loc='best')
-    plt.show()
+    if plot:
+        plt.plot(t, u, 'r--', label='u(t)')
+        plt.plot(t, x + y, 'b:', label='IOB(t)')
+        plt.ylabel('values')
+        plt.xlabel('time')
+        plt.legend(loc='best')
+        plt.show()
 
     return x + y
 

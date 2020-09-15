@@ -10,7 +10,7 @@ from preprocessing.data_augmentation.physiological_features import AOB, CPB, IOB
 import misc.datasets
 from misc.utils import printd
 from preprocessing.resampling import resample, resample_idiab
-from preprocessing.samples_creation import create_samples, create_samples_idiab
+from preprocessing.samples_creation import create_samples, create_samples_idiab, create_samples_idiab_study
 from preprocessing.splitting import split
 from preprocessing.standardization import standardize
 from .cleaning.last_day_removal import remove_last_day
@@ -77,7 +77,7 @@ def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
-    printd("Preprocessing " + dataset + subject )
+    printd("Preprocessing " + dataset + subject)
     data = load_idiab(dataset, subject)
     data = remove_anomalies_idiab(data)
     data = resample_idiab(data, cs.freq)
@@ -85,7 +85,7 @@ def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
     data["CPB"] = CPB(data, cs.C_bio, cs.t_max)
     data["IOB"] = IOB(data, cs.K_DIA)
     data["AOB"] = AOB(data, cs.k_s)
-    data = create_samples_idiab(data, ph, hist, day_len)
+    data = create_samples_idiab_study(data, ph, hist, day_len)
     n_days_test = misc.datasets.datasets[dataset]["n_days_test"]
     data = fill_nans_idiab(data, day_len, n_days_test)
     return data

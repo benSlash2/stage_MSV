@@ -28,15 +28,15 @@ class ResultsDataset():
         self.legacy = legacy
         self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
 
-    def compute_results(self, details=False):
+    def compute_results(self, details=False, study=False, mode="valid"):
         """
         Loop through the subjects of the dataset, and compute the mean performances
         :return: mean of metrics, std of metrics
         """
         res = []
         for subject in self.subjects:
-            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, subject,
-                                         legacy=self.legacy).compute_mean_std_results()
+            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, self.subject, study=study,
+                                         mode=mode).compute_mean_std_results()
             if details:
                 print(self.dataset, subject, res_subject)
 
@@ -47,11 +47,80 @@ class ResultsDataset():
         mean, std = np.nanmean(res, axis=0), np.nanstd(res, axis=0)
         return dict(zip(keys, mean)), dict(zip(keys, std))
 
-    def compute_average_params(self):
+    def compute_average_params(self, study=False, mode="valid"):
         params = []
         for subject in self.subjects:
-            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, subject,
-                                         legacy=self.legacy)
+            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset,subject, study=study,
+                                         mode=mode)
+            params.append(res_subject.params)
+
+        return dict(zip(params[0].keys(), np.mean([list(_.values()) for _ in params], axis=0)))
+
+    def to_latex(self, table="acc", model_name=None):
+        """
+        Format the results into a string for the paper in LATEX
+        :param table: either "acc" or "cg_ega", corresponds to the table
+        :param model_name: prefix of the string, name of the model
+        :return:
+        """
+        mean, std = self.compute_results()
+        if table == "cg_ega":
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            mean = [mean[k] * 100 for k in keys]
+            std = [std[k] * 100 for k in keys]
+        elif table == "general":
+            acc_keys = ["RMSE", "MAPE", "CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"]
+            mean = [mean[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else mean[k] * 100 for k in acc_keys]
+            std = [std[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else std[k] * 100 for k in acc_keys]
+
+        print_latex(mean, std, label=self.model)
+
+
+class ResultsAllSeeds():
+    def __init__(self, model, mode, experiment, ph, dataset, subject, legacy=False):
+        """
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        :param model: name of the model (e.g., "base")
+        :param experiment: name of the experiment (e.g., "test")
+        :param ph: prediction horizons in minutes (e.g., 30)
+        :param dataset: name of the dataset (e.g., "ohio")
+        :param legacy: used for old results without the params field in them #TODO remove
+        """
+
+        self.model = model
+        self.mode = mode
+        self.experiment = experiment
+        self.ph = ph
+        self.dataset = dataset
+        self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
+        self.legacy = legacy
+        self.subject = subject
+
+    def compute_results(self, details=False):
+        """
+        Loop through the subjects of the dataset, and compute the mean performances
+        :return: mean of metrics, std of metrics
+        """
+        res = []
+        for seed in range(10):
+            res_subject = ResultsSubject(self.model, self.experiment + "seed " + str(seed), self.ph, self.dataset,
+                                         self.subject, study=True, mode=self.mode).compute_mean_std_results()
+            if details:
+                print(self.dataset, "Seed ", seed, res_subject)
+
+            res.append(res_subject[0])  # only the mean
+
+        keys = list(res[0].keys())
+        res = [list(res_.values()) for res_ in res]
+        mean, std = np.nanmean(res, axis=0), np.nanstd(res, axis=0)
+        return dict(zip(keys, mean)), dict(zip(keys, std))
+
+    def compute_average_params(self):
+        params = []
+        for seed in range(10):
+            res_subject = ResultsSubject(self.model, self.experiment + "seed " + str(seed), self.ph, self.dataset,
+                                         self.subject, study=True, mode=self.mode)
             params.append(res_subject.params)
 
         return dict(zip(params[0].keys(), np.mean([list(_.values()) for _ in params], axis=0)))
@@ -150,10 +219,10 @@ class ResultsSubject():
                 path = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph), file)
         else:
             if not transfer:
-                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient " + self.subject,
                                     self.experiment, "results.npy")
             else:
-                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+                path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient " + self.subject,
                                     self.experiment, "results.npy")
 
         if not legacy:
@@ -186,7 +255,7 @@ class ResultsSubject():
             saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
             np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), [self.params, saveable_results])
         else:
-            dir = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient ", self.subject,
+            dir = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient " + self.subject,
                                self.experiment)
             Path(dir).mkdir(parents=True, exist_ok=True)
             saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])

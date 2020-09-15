@@ -15,7 +15,7 @@ from misc.utils import locate_params, locate_model
 import os
 
 
-def main(dataset, model, params, exp, mode, log, ph, plot):
+def main(dataset, model, params, mode, log, ph, plot):
     all_feat = ["CHO", "insulin", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
     combs = []
     for i in range(1, len(all_feat) + 1):
@@ -31,7 +31,7 @@ def main(dataset, model, params, exp, mode, log, ph, plot):
     for i in range(1, 7):
         dir = os.path.join(cs.path, "study", dataset, model, mode, "patient " + str(i))
         """ PREPROCESSING """
-        printd("Preprocessing " + dataset, " : Patient" + str(i), model, params, exp, mode, log, ph, plot)
+        printd("Preprocessing " + dataset, ": patient " + str(i), model, params, mode, log, ph, plot)
         # retrieve model's parameters
         params = locate_params(params)
         model_class = locate_model(model)
@@ -41,7 +41,7 @@ def main(dataset, model, params, exp, mode, log, ph, plot):
         hist_f = params["hist"] // cs.freq
         day_len_f = cs.day_len // cs.freq
 
-        data = preprocessing_idiab_full(dataset, i, ph_f, hist_f, day_len_f)
+        data = preprocessing_idiab_full(dataset, str(i), ph_f, hist_f, day_len_f)
         for ele in combs:
             train, valid, test, scalers = preprocessing_idiab_select(data, dataset, day_len_f, ele)
             for j in range(10):
@@ -49,15 +49,16 @@ def main(dataset, model, params, exp, mode, log, ph, plot):
                 """ MODEL TRAINING & TUNING """
                 file = os.path.join(dir, " + ".join(ele), "seed " + str(j), "weights", "weights")
 
-                raw_results = make_predictions(i, model_class, params, ph_f, train, valid, test, mode=mode,
+                raw_results = make_predictions(str(i), model_class, params, ph_f, train, valid, test, mode=mode,
                                                save_model_file=file)
 
                 """ POST-PROCESSING """
                 raw_results = postprocessing(raw_results, scalers, dataset)
 
                 """ EVALUATION """
-                results = ResultsSubject(model, " + ".join(ele) + "seed " + str(j), ph, dataset, i, params=params, results=raw_results,
-                                         study=True, mode=mode)
+                file_save = os.path.join(" + ".join(ele), "seed " + str(j))
+                results = ResultsSubject(model, file_save, ph, dataset, str(i), params=params,
+                                         results=raw_results, study=True, mode=mode)
                 printd(results.compute_mean_std_results())
 
                 if plot:
@@ -101,12 +102,9 @@ if __name__ == "__main__":
         sys.stdout = open(join(cs.path, "logs", args.log + ".log"), "w")
 
     main(log=args.log,
-         subject=args.subject,
          model=args.model,
          ph=args.ph,
          params=args.params,
-         exp=args.exp,
          dataset=args.dataset,
          mode=args.mode,
-         plot=args.plot,
-         save=args.save)
+         plot=args.plot)
