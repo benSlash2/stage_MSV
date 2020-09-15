@@ -29,7 +29,6 @@ class LSTM(DeepTLPredictor):
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
             self.params["patience"], self.checkpoint_file)
 
-
     def predict(self, dataset, clear=False):
         # get the data for which we make the predictions
         x, y, t = self._str2dataset(dataset)
@@ -50,7 +49,7 @@ class LSTM(DeepTLPredictor):
 
         return results
 
-    def save(self, save_file):
+    def save(self, save_file, clear=True):
         no_da_lstm = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
                                       self.params["dropout_layer"], False, 0)
         self.model.load_state_dict(torch.load(self.checkpoint_file))
@@ -59,6 +58,8 @@ class LSTM(DeepTLPredictor):
         if not os.path.exists(os.path.dirname(save_file)):
             os.makedirs(os.path.dirname(save_file))
         torch.save(no_da_lstm.state_dict(), save_file)
+        if clear:
+            self._clear_checkpoint()
 
     def _compute_input_shape(self):
         x_train, _, _ = self._str2dataset("train")

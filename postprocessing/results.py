@@ -1,4 +1,4 @@
-from misc.utils import print_latex
+from misc.utils import print_latex, printd
 import pandas as pd
 import os
 import numpy as np
@@ -96,6 +96,19 @@ class ResultsAllSeeds():
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
         self.legacy = legacy
         self.subject = subject
+        self.save_raw_results()
+
+    def save_raw_results(self):
+        """
+        Save the results and params
+        :return:
+        """
+        dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode, "patient " + self.subject,
+                           self.experiment)
+        Path(dir).mkdir(parents=True, exist_ok=True)
+        saveable_results = self.compute_results()
+        printd("Global results for patient", self.subject, " with features", self.experiment, "\n", saveable_results)
+        np.save(os.path.join(dir, "results.npy"), [self.compute_params(), saveable_results])
 
     def compute_results(self, details=False):
         """
@@ -104,8 +117,9 @@ class ResultsAllSeeds():
         """
         res = []
         for seed in range(10):
-            res_subject = ResultsSubject(self.model, self.experiment + "seed " + str(seed), self.ph, self.dataset,
-                                         self.subject, study=True, mode=self.mode).compute_mean_std_results()
+            exp = os.path.join(self.experiment, "seed " + str(seed))
+            res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, self.subject, study=True,
+                                         mode=self.mode).compute_mean_std_results()
             if details:
                 print(self.dataset, "Seed ", seed, res_subject)
 
@@ -116,14 +130,11 @@ class ResultsAllSeeds():
         mean, std = np.nanmean(res, axis=0), np.nanstd(res, axis=0)
         return dict(zip(keys, mean)), dict(zip(keys, std))
 
-    def compute_average_params(self):
-        params = []
-        for seed in range(10):
-            res_subject = ResultsSubject(self.model, self.experiment + "seed " + str(seed), self.ph, self.dataset,
-                                         self.subject, study=True, mode=self.mode)
-            params.append(res_subject.params)
-
-        return dict(zip(params[0].keys(), np.mean([list(_.values()) for _ in params], axis=0)))
+    def compute_params(self):
+        exp = os.path.join(self.experiment, "seed 0")
+        res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, self.subject, study=True,
+                                     mode=self.mode)
+        return res_subject.params
 
     def to_latex(self, table="acc", model_name=None):
         """
@@ -197,7 +208,7 @@ class ResultsSubject():
 
         if results is None and params is None:
             if not legacy:
-                self.params, self.results = self.load_raw_results(study, legacy)
+                self.params, self.results = self.load_raw_results(study, mode, legacy)
             else:
                 self.results = self.load_raw_results(study, mode, legacy)
         else:

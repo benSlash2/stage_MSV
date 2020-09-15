@@ -77,7 +77,6 @@ def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
-    printd("Preprocessing " + dataset + subject)
     data = load_idiab(dataset, subject)
     data = remove_anomalies_idiab(data)
     data = resample_idiab(data, cs.freq)
@@ -103,7 +102,6 @@ def preprocessing_idiab_select(data, dataset, day_len, features):
     train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
     [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
     train, valid, test, scalers = standardize(train, valid, test)
-    print(test[0].shape)
     return train, valid, test, scalers
 
 

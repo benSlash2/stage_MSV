@@ -1,4 +1,4 @@
-from postprocessing.results import ResultsSubject
+from postprocessing.results import ResultsSubject, ResultsAllSeeds
 from postprocessing.postprocessing import postprocessing
 from preprocessing.preprocessing import preprocessing, preprocessing_idiab_full, preprocessing_idiab_select
 import sys
@@ -15,7 +15,7 @@ from misc.utils import locate_params, locate_model
 import os
 
 
-def main(dataset, model, params, mode, log, ph, plot):
+def main(dataset, model, params, mode, log, ph):
     all_feat = ["CHO", "insulin", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
     combs = []
     for i in range(1, len(all_feat) + 1):
@@ -27,11 +27,12 @@ def main(dataset, model, params, mode, log, ph, plot):
                          "AOB" not in ele or "steps" not in ele)]
     # 107 combinaisons
     # 107 * 6 * 10 = 6420 modèles !
-
+    printd("Dataset:", dataset, "-------- Model:", model, "-------- Params:", params, "-------- Mode:", mode,
+           "-------- Horizon:", ph, "minutes")
     for i in range(1, 7):
         dir = os.path.join(cs.path, "study", dataset, model, mode, "patient " + str(i))
         """ PREPROCESSING """
-        printd("Preprocessing " + dataset, ": patient " + str(i), model, params, mode, log, ph, plot)
+        printd("Preprocessing patient " + str(i))
         # retrieve model's parameters
         params = locate_params(params)
         model_class = locate_model(model)
@@ -43,6 +44,7 @@ def main(dataset, model, params, mode, log, ph, plot):
 
         data = preprocessing_idiab_full(dataset, str(i), ph_f, hist_f, day_len_f)
         for ele in combs:
+            printd("Preprocessing patient", str(i), "with features " + " + ".join(ele))
             train, valid, test, scalers = preprocessing_idiab_select(data, dataset, day_len_f, ele)
             for j in range(10):
                 torch.manual_seed(j)
@@ -60,9 +62,7 @@ def main(dataset, model, params, mode, log, ph, plot):
                 results = ResultsSubject(model, file_save, ph, dataset, str(i), params=params,
                                          results=raw_results, study=True, mode=mode)
                 printd(results.compute_mean_std_results())
-
-                if plot:
-                    results.plot(0)
+            global_results = ResultsAllSeeds(model, mode, " + ".join(ele), ph, dataset, str(i))
 
 
 if __name__ == "__main__":
@@ -86,15 +86,11 @@ if __name__ == "__main__":
     # retrieve and process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str)
-    parser.add_argument("--subject", type=str)
     parser.add_argument("--model", type=str)
     parser.add_argument("--params", type=str)
     parser.add_argument("--ph", type=int)
-    parser.add_argument("--exp", type=str)
     parser.add_argument("--mode", type=str)
-    parser.add_argument("--plot", type=int)
     parser.add_argument("--log", type=str)
-    parser.add_argument("--save", type=int)
     args = parser.parse_args()
 
     # compute stdout redirection to log file
@@ -106,5 +102,4 @@ if __name__ == "__main__":
          ph=args.ph,
          params=args.params,
          dataset=args.dataset,
-         mode=args.mode,
-         plot=args.plot)
+         mode=args.mode)
