@@ -29,19 +29,18 @@ def main(dataset, model, params, mode, log, ph):
     # 107 * 6 * 10 = 6420 modèles !
     printd("Dataset:", dataset, "-------- Model:", model, "-------- Params:", params, "-------- Mode:", mode,
            "-------- Horizon:", ph, "minutes")
+    # retrieve model's parameters
+    params = locate_params(params)
+    model_class = locate_model(model)
+
+    # scale variables in minutes to the benchmark sampling frequency
+    ph_f = ph // cs.freq
+    hist_f = params["hist"] // cs.freq
+    day_len_f = cs.day_len // cs.freq
     for i in range(1, 7):
         dir = os.path.join(cs.path, "study", dataset, model, mode, "patient " + str(i))
         """ PREPROCESSING """
         printd("Preprocessing patient " + str(i))
-        # retrieve model's parameters
-        params = locate_params(params)
-        model_class = locate_model(model)
-
-        # scale variables in minutes to the benchmark sampling frequency
-        ph_f = ph // cs.freq
-        hist_f = params["hist"] // cs.freq
-        day_len_f = cs.day_len // cs.freq
-
         data = preprocessing_idiab_full(dataset, str(i), ph_f, hist_f, day_len_f)
         for ele in combs:
             printd("Preprocessing patient", str(i), "with features " + " + ".join(ele))
