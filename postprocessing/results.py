@@ -317,7 +317,7 @@ class ResultsAllSeeds():
                            self.experiment)
         Path(dir).mkdir(parents=True, exist_ok=True)
         saveable_results = self.compute_results()
-        printd("Global results for patient", self.subject, " with features", self.experiment, "\n", saveable_results)
+        printd("Global results for patient", self.subject, "with features", self.experiment, "\n", saveable_results)
         np.save(os.path.join(dir, "results_metrics.npy"), [self.compute_params(), saveable_results])
 
     def compute_results(self, details=False):

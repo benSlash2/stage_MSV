@@ -70,7 +70,7 @@ def create_samples_idiab_study(data, ph, hist, day_len):
 
     new_columns = np.r_[["time"], ["glucose_" + str(i) for i in range(hist)], ["CHO_" + str(i) for i in range(hist)], [
         "insulin_" + str(i) for i in range(hist)], ["mets_" + str(i) for i in range(hist)], ["calories_" + str(i)
-        for i in range(hist)],["heartrate_" + str(i) for i in range(hist)], ["steps" + str(i) for i in range(hist)],
+        for i in range(hist)], ["heartrate_" + str(i) for i in range(hist)], ["steps" + str(i) for i in range(hist)],
                         ["CPB" + str(i) for i in range(hist)], ["IOB" + str(i) for i in range(hist)],
                         ["AOB" + str(i) for i in range(hist)], ["y"]]
 

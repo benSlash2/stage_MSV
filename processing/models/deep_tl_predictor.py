@@ -85,6 +85,9 @@ class DeepTLPredictor(Predictor):
         cal = data.loc[:, [col for col in data.columns if "calories" in col]].values
         heart = data.loc[:, [col for col in data.columns if "heartrate" in col]].values
         steps = data.loc[:, [col for col in data.columns if "steps" in col]].values
+        cpb = data.loc[:, [col for col in data.columns if "CPB" in col]].values
+        iob = data.loc[:, [col for col in data.columns if "IOB" in col]].values
+        aob = data.loc[:, [col for col in data.columns if "AOB" in col]].values
 
 
         # reshape timeseries in (n_samples, hist, 1) shape and concatenate
@@ -95,9 +98,12 @@ class DeepTLPredictor(Predictor):
         cal = cal.reshape(-1, g.shape[1], 1)
         heart = heart.reshape(-1, g.shape[1], 1)
         steps = steps.reshape(-1, g.shape[1], 1)
+        cpb = cpb.reshape(-1, g.shape[1], 1)
+        iob = iob.reshape(-1, g.shape[1], 1)
+        aob = aob.reshape(-1, g.shape[1], 1)
 
         a = 0
-        for i in [g, cho, ins, mets, cal, heart, steps]:
+        for i in [g, cho, ins, mets, cal, heart, steps, cpb, iob, aob]:
             if i.size != 0:
                 if a == 0:
                     x = i
