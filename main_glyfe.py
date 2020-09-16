@@ -14,7 +14,6 @@ from processing.cross_validation import make_predictions, find_best_hyperparamet
 from misc.utils import locate_params, locate_model, locate_search
 import os
 torch.manual_seed(0)
-# np.random.seed(0)
 """ This is the source code the benchmark GLYFE for glucose prediction in diabetes.
     For more infos on how to use it, go to its Github repository at: https://github.com/dotXem/GLYFE """
 

@@ -1,4 +1,4 @@
-from postprocessing.results import ResultsSubject, ResultsAllSeeds
+from postprocessing.results import ResultsSubject, ResultsAllSeeds, ResultsAllPatientsAllExp
 from postprocessing.postprocessing import postprocessing
 from preprocessing.preprocessing import preprocessing, preprocessing_idiab_full, preprocessing_idiab_select
 import sys
@@ -61,8 +61,9 @@ def main(dataset, model, params, mode, log, ph):
                 results = ResultsSubject(model, file_save, ph, dataset, str(i), params=params,
                                          results=raw_results, study=True, mode=mode)
                 printd(results.compute_mean_std_results())
-            global_results = ResultsAllSeeds(model, mode, " + ".join(ele), ph, dataset, str(i))
-
+            # global_results = ResultsAllSeeds(model, mode, " + ".join(ele), ph, dataset, str(i))
+    experiments = [" + ".join(ele) if len(ele) > 1 else ele[0] for ele in combs]
+    ResultsAllPatientsAllExp(model, mode, experiments, ph, dataset)
 
 if __name__ == "__main__":
     """ The main function contains the following optional parameters:

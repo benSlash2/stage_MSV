@@ -77,6 +77,216 @@ class ResultsDataset():
         print_latex(mean, std, label=self.model)
 
 
+class ResultsAllPatientsAllExp():
+    def __init__(self, model, mode, experiments, ph, dataset, legacy=False):
+        """
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        :param model: name of the model (e.g., "base")
+        :param experiment: name of the experiment (e.g., "test")
+        :param ph: prediction horizons in minutes (e.g., 30)
+        :param dataset: name of the dataset (e.g., "ohio")
+        :param legacy: used for old results without the params field in them #TODO remove
+        """
+
+        self.model = model
+        self.mode = mode
+        self.experiments = experiments
+        self.ph = ph
+        self.dataset = dataset
+        self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
+        self.legacy = legacy
+        self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
+        self.save_raw_results()
+
+    def save_raw_results(self):
+        """
+        Save the results and params
+        :return:
+        """
+        dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode)
+        Path(dir).mkdir(parents=True, exist_ok=True)
+        saveable_results = self.compute_results()
+        printd("Global metrics for all patients and all experiments saved at ", dir)
+        np.save(os.path.join(dir, "metrics.npy"), [self.compute_params(), saveable_results])
+
+    def compute_results(self, details=False):
+        """
+        Loop through the subjects of the dataset, and compute the mean performances
+        :return: mean of metrics, std of metrics
+        """
+        res = []
+        for experiment in self.experiments:
+            res_subject = ResultsAllPatients(self.model, self.mode, experiment, self.ph, self.dataset).compute_results()
+            if details:
+                print(self.dataset, experiment, res_subject)
+            res.append(res_subject)
+
+        return dict(zip(self.experiments, res))
+
+    def compute_params(self):
+        res_subject = ResultsSubject(self.model, self.experiments[0], self.ph, self.dataset, "1", study=True,
+                                     mode=self.mode)
+        return res_subject.params
+
+    def to_latex(self, table="acc", model_name=None):
+        """
+        Format the results into a string for the paper in LATEX
+        :param table: either "acc" or "cg_ega", corresponds to the table
+        :param model_name: prefix of the string, name of the model
+        :return:
+        """
+        mean, std = self.compute_results()
+        if table == "cg_ega":
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            mean = [mean[k] * 100 for k in keys]
+            std = [std[k] * 100 for k in keys]
+        elif table == "general":
+            acc_keys = ["RMSE", "MAPE", "CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"]
+            mean = [mean[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else mean[k] * 100 for k in acc_keys]
+            std = [std[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else std[k] * 100 for k in acc_keys]
+
+        print_latex(mean, std, label=self.model)
+
+
+class ResultsAllExp():
+    def __init__(self, model, mode, experiments, ph, dataset, subject, legacy=False):
+        """
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        :param model: name of the model (e.g., "base")
+        :param experiment: name of the experiment (e.g., "test")
+        :param ph: prediction horizons in minutes (e.g., 30)
+        :param dataset: name of the dataset (e.g., "ohio")
+        :param legacy: used for old results without the params field in them #TODO remove
+        """
+
+        self.model = model
+        self.mode = mode
+        self.experiments = experiments
+        self.ph = ph
+        self.dataset = dataset
+        self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
+        self.legacy = legacy
+        self.subject = subject
+        self.save_raw_results()
+
+    def save_raw_results(self):
+        """
+        Save the results and params
+        :return:
+        """
+        dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode, "patient " + self.subject)
+        Path(dir).mkdir(parents=True, exist_ok=True)
+        saveable_results = self.compute_results()
+        printd("Global results for patient", self.subject, " with all experiments saved at", dir)
+        np.save(os.path.join(dir, "results.npy"), [self.compute_params(), saveable_results])
+
+    def compute_results(self, details=False):
+        """
+        Loop through the subjects of the dataset, and compute the mean performances
+        :return: mean of metrics, std of metrics
+        """
+        res = []
+        for experiment in self.experiments:
+            res_subject = ResultsAllSeeds(self.model, self.mode, experiment, self.ph, self.dataset,
+                                          self.subject).compute_results()
+            if details:
+                print(self.dataset, experiment, res_subject)
+            res.append(res_subject)
+
+        return dict(zip(self.experiments, res))
+
+    def compute_params(self):
+        res_subject = ResultsSubject(self.model, self.experiments[0], self.ph, self.dataset, "1", study=True,
+                                     mode=self.mode)
+        return res_subject.params
+
+    def to_latex(self, table="acc", model_name=None):
+        """
+        Format the results into a string for the paper in LATEX
+        :param table: either "acc" or "cg_ega", corresponds to the table
+        :param model_name: prefix of the string, name of the model
+        :return:
+        """
+        mean, std = self.compute_results()
+        if table == "cg_ega":
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            mean = [mean[k] * 100 for k in keys]
+            std = [std[k] * 100 for k in keys]
+        elif table == "general":
+            acc_keys = ["RMSE", "MAPE", "CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"]
+            mean = [mean[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else mean[k] * 100 for k in acc_keys]
+            std = [std[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else std[k] * 100 for k in acc_keys]
+
+        print_latex(mean, std, label=self.model)
+
+
+class ResultsAllPatients():
+    def __init__(self, model, mode, experiment, ph, dataset, legacy=False):
+        """
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        :param model: name of the model (e.g., "base")
+        :param experiment: name of the experiment (e.g., "test")
+        :param ph: prediction horizons in minutes (e.g., 30)
+        :param dataset: name of the dataset (e.g., "ohio")
+        :param legacy: used for old results without the params field in them #TODO remove
+        """
+
+        self.model = model
+        self.mode = mode
+        self.experiment = experiment
+        self.ph = ph
+        self.dataset = dataset
+        self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
+        self.legacy = legacy
+        self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
+
+    def compute_results(self, details=False):
+        """
+        Loop through the subjects of the dataset, and compute the mean performances
+        :return: mean of metrics, std of metrics
+        """
+        res = []
+        for subject in self.subjects:
+            res_subject = ResultsAllSeeds(self.model, self.mode, self.experiment, self.ph, self.dataset,
+                                          subject).compute_results()
+            if details:
+                print(self.dataset, subject, res_subject)
+
+            res.append(res_subject[0])  # only the mean
+
+        keys = list(res[0].keys())
+        res = [list(res_.values()) for res_ in res]
+        mean, std = np.nanmean(res, axis=0), np.nanstd(res, axis=0)
+        return dict(zip(keys, mean)), dict(zip(keys, std))
+
+    def compute_params(self):
+        res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, "1", study=True,
+                                     mode=self.mode)
+        return res_subject.params
+
+    def to_latex(self, table="acc", model_name=None):
+        """
+        Format the results into a string for the paper in LATEX
+        :param table: either "acc" or "cg_ega", corresponds to the table
+        :param model_name: prefix of the string, name of the model
+        :return:
+        """
+        mean, std = self.compute_results()
+        if table == "cg_ega":
+            keys = ["CG_EGA_AP_hypo", "CG_EGA_BE_hypo", "CG_EGA_EP_hypo", "CG_EGA_AP_eu", "CG_EGA_BE_eu",
+                    "CG_EGA_EP_eu", "CG_EGA_AP_hyper", "CG_EGA_BE_hyper", "CG_EGA_EP_hyper"]
+            mean = [mean[k] * 100 for k in keys]
+            std = [std[k] * 100 for k in keys]
+        elif table == "general":
+            acc_keys = ["RMSE", "MAPE", "CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"]
+            mean = [mean[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else mean[k] * 100 for k in acc_keys]
+            std = [std[k] if k not in ["CG_EGA_AP", "CG_EGA_BE", "CG_EGA_EP"] else std[k] * 100 for k in acc_keys]
+
+        print_latex(mean, std, label=self.model)
+
+
 class ResultsAllSeeds():
     def __init__(self, model, mode, experiment, ph, dataset, subject, legacy=False):
         """
@@ -108,7 +318,7 @@ class ResultsAllSeeds():
         Path(dir).mkdir(parents=True, exist_ok=True)
         saveable_results = self.compute_results()
         printd("Global results for patient", self.subject, " with features", self.experiment, "\n", saveable_results)
-        np.save(os.path.join(dir, "results.npy"), [self.compute_params(), saveable_results])
+        np.save(os.path.join(dir, "results_metrics.npy"), [self.compute_params(), saveable_results])
 
     def compute_results(self, details=False):
         """

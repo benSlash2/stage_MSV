@@ -8,9 +8,9 @@ parameters = {
     "hidden": [256, 256],
     "dropout_weights": 0.0,
     "dropout_layer": 0.0,
-    "epochs": 2,
-    "batch_size": 500, #50,
-    "lr": 1e-3,
+    "epochs": 500,
+    "batch_size": 200, #50,
+    "lr": 5*(1e-3),
     "l2": 1e-4,
     "patience": 50,
 }
