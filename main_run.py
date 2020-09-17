@@ -11,19 +11,25 @@ from misc.utils import locate_params, locate_model
 import os
 
 
-def main(dataset, model, params, mode, ph):
+def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None):
 
     """ FEATURES COMBINATIONS """
-    all_feat = ["CHO", "insulin", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
+    if features_comb is None:
+        all_feat = ["CHO", "insulin", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
+    else:
+        all_feat = features_comb.split(',')
     combs = []
-    for i in range(1, len(all_feat) + 1):
-        els = [list(x) for x in itertools.combinations(all_feat, i)]
-        combs.extend(els)
+    if number_comb is None:
+        for i in range(0, len(all_feat) + 1):
+            els = [list(x) for x in itertools.combinations(all_feat, i)]
+            combs.extend(els)
+    else:
+        combs = [list(x) for x in itertools.combinations(all_feat, number_comb)]
 
     combs = [ele for ele in combs if
              ("CPB" not in ele or "CHO" not in ele) and ("IOB" not in ele or "insulin" not in ele) and (
                          "AOB" not in ele or "steps" not in ele)]
-    # 107 combinations * 6 patients * 10 seeds * 5 sets = 32100 models to train !!
+    # 107 combinations * 6 patients * 5 seeds * 5 sets = 32100 models to train !!
 
     printd("Dataset:", dataset, "-------- Model:", model, "-------- Params:", params, "-------- Mode:", mode,
            "-------- Horizon:", ph, "minutes")
@@ -38,30 +44,23 @@ def main(dataset, model, params, mode, ph):
     day_len_f = cs.day_len // cs.freq
 
     for i in range(1, 7):
-
         dir = os.path.join(cs.path, "study", dataset, model, mode, "patient " + str(i))
-
         """ PREPROCESSING ALL FEATURES"""
         printd("Preprocessing patient " + str(i))
         data = preprocessing_idiab_full(dataset, str(i), ph_f, hist_f, day_len_f)
 
         for ele in combs:
-
             printd("Preprocessing patient", str(i), "with features " + " + ".join(ele))
-            train, valid, test, scalers = preprocessing_idiab_select(data, dataset, day_len_f, ele
-                                                                     )
-            for j in range(10):
+            train, valid, test, scalers = preprocessing_idiab_select(data, dataset, day_len_f, ele)
 
+            for j in range(5):
                 torch.manual_seed(j)
                 """ MODEL TRAINING & TUNING """
                 file = os.path.join(dir, " + ".join(ele), "seed " + str(j), "weights", "weights")
-
                 raw_results = make_predictions(str(i), model_class, params, ph_f, train, valid, test, mode=mode,
                                                save_model_file=file)
-
                 """ POST-PROCESSING """
                 raw_results = postprocessing(raw_results, scalers, dataset)
-
                 """ EVALUATION """
                 file_save = os.path.join(" + ".join(ele), "seed " + str(j))
                 results = ResultsSubject(model, file_save, ph, dataset, str(i), params=params,
@@ -95,10 +94,15 @@ if __name__ == "__main__":
     parser.add_argument("--params", type=str)
     parser.add_argument("--ph", type=int)
     parser.add_argument("--mode", type=str)
+    parser.add_argument("--number_comb", type=int)
+    parser.add_argument("--features_comb", type=str)
+
     args = parser.parse_args()
 
     main(model=args.model,
          ph=args.ph,
          params=args.params,
          dataset=args.dataset,
-         mode=args.mode)
+         mode=args.mode,
+         number_comb=args.number_comb,
+         features_comb=args.features_comb)
