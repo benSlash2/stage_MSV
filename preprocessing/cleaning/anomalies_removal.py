@@ -103,7 +103,6 @@ def detect_glucore_readings_anomalies_idiab(data, threshold):
     aving a z_score > threshold to be flagged as anomalies
     :return:
     """
-    # df_nonan = data.drop(["CHO", "insulin", "calories", "mets", "heartrate", "steps"], axis=1).dropna()
     df_nonan = data.drop(["CHO", "insulin", "calories", "mets", "heartrate", "steps"], axis=1).dropna()
     i = df_nonan.index
     t = df_nonan["datetime"].astype(np.int64).values
@@ -130,5 +129,6 @@ def detect_glucore_readings_anomalies_idiab(data, threshold):
     anomalies_indexes = np.array(np.where(np.all(
         np.c_[np.abs(z_score)[:, 0] >= threshold, np.abs(z_score)[:, 1] >= threshold, np.prod(z_score, axis=1) < 0],
         axis=1))).reshape(-1, 1) + 1
+    k = i[anomalies_indexes].ravel()
+    return np.append(k, df_nonan[df_nonan["glucose"] == 0].index)
 
-    return i[anomalies_indexes].ravel()

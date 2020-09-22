@@ -124,8 +124,8 @@ class ResultsAllPatientsAllExp():
         return dict(zip(self.experiments, res))
 
     def compute_params(self):
-        res_subject = ResultsSubject(self.model, self.experiments[0], self.ph, self.dataset, "1", study=True,
-                                     mode=self.mode)
+        exp = os.path.join(self.experiments[0], "seed 0")
+        res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, "1", study=True, mode=self.mode)
         return res_subject.params
 
     def to_latex(self, table="acc", model_name=None):
@@ -197,7 +197,8 @@ class ResultsAllExp():
         return dict(zip(self.experiments, res))
 
     def compute_params(self):
-        res_subject = ResultsSubject(self.model, self.experiments[0], self.ph, self.dataset, "1", study=True,
+        exp = os.path.join(self.experiments[0], "seed 0")
+        res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, "1", study=True,
                                      mode=self.mode)
         return res_subject.params
 
@@ -262,7 +263,8 @@ class ResultsAllPatients():
         return dict(zip(keys, mean)), dict(zip(keys, std))
 
     def compute_params(self):
-        res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, "1", study=True,
+        exp = os.path.join(self.experiment, "seed 0")
+        res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, "1", study=True,
                                      mode=self.mode)
         return res_subject.params
 
@@ -326,7 +328,7 @@ class ResultsAllSeeds():
         :return: mean of metrics, std of metrics
         """
         res = []
-        for seed in range(10):
+        for seed in range(5):
             exp = os.path.join(self.experiment, "seed " + str(seed))
             res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, self.subject, study=True,
                                          mode=self.mode).compute_mean_std_results()
