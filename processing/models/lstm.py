@@ -6,6 +6,8 @@ from processing.models.deep_tl_predictor import DeepTLPredictor
 import numpy as np
 import torch.nn as nn
 from .pytorch_tools.training import fit, predict
+from captum.attr import IntegratedGradients, GradientShap, Occlusion, NoiseTunnel
+from captum.attr import visualization as viz
 
 
 class LSTM(DeepTLPredictor):
@@ -65,7 +67,6 @@ class LSTM(DeepTLPredictor):
         x_train, _, _ = self._str2dataset("train")
         return x_train.shape[2]
 
-
     def extract_features(self, dataset, file):
         x, y, _ = self._str2dataset(dataset)
         self.model.load_state_dict(torch.load(file))
@@ -74,6 +75,28 @@ class LSTM(DeepTLPredictor):
         features = features.reshape(features.shape[0], -1)
 
         return [features, y]
+
+    def integrated_gradients(self, dataset, file):
+        self.model = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
+                                      self.params["dropout_layer"], self.params["domain_adversarial"], self.n_domains)
+        self.model.cuda()
+        self.model.load_state_dict(torch.load(file))
+        self.model.eval()
+
+        x, y, _ = self._str2dataset(dataset)
+        x = torch.Tensor(x).cuda()
+        x.requires_grad_()
+
+        self.model.train()
+        ig = IntegratedGradients(self.model)
+        attr = []
+        for i in range(len(x) // 10):
+            attr_i = ig.attribute(x[i * 10:(i + 1)*10], n_steps=10)
+            attr.append(attr_i.cpu().detach().numpy())
+        attr_i = ig.attribute(x[(i + 1) * 10:len(x)], n_steps=10)
+        attr.append(attr_i.cpu().detach().numpy())
+        attr = np.concatenate(attr, axis=0)
+        return attr
 
     class LSTM_Module(nn.Module):
 

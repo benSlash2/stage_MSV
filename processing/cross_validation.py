@@ -26,6 +26,7 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
         #     break
     return results
 
+
 def make_predictions(subject, model_class, params, ph, train, valid, test, mode="valid",save_model_file=None):
     """
     For every train, valid, test fold, fit the given model with params at prediciton horizon on the training set,
@@ -46,6 +47,7 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         model = model_class(subject, ph, params, train_i, valid_i, test_i)
         model.fit()
         res = model.predict(dataset=mode)
+        attr = model.integrated_gradients(dataset=mode, file=model.checkpoint_file)
         results.append(res)
 
         if save_model_file is not None:

@@ -7,6 +7,7 @@ import copy
 
 """ Credit : https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py """
 
+
 class EarlyStopping:
     """Early stops the training_old if validation loss doesn't improve after a given patience."""
     def __init__(self, patience=7, save_n_epochs=10, path=os.path.join(path,"checkpoints.pt"), verbose=False):

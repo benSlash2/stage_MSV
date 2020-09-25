@@ -10,6 +10,7 @@ import misc.constants as cs
 from .pytorch_tools.losses import DALoss
 from torch import Tensor
 
+
 class DeepTLPredictor(Predictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
@@ -61,7 +62,6 @@ class DeepTLPredictor(Predictor):
             domains_weights = None
 
         return domains_weights
-
 
     def _compute_loss_func(self):
         if self.params["domain_adversarial"]:

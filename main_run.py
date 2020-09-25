@@ -11,7 +11,7 @@ from misc.utils import locate_params, locate_model
 import os
 
 
-def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None):
+def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None, patients=None):
 
     """ FEATURES COMBINATIONS """
     if features_comb is None:
@@ -43,7 +43,12 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None)
     hist_f = params["hist"] // cs.freq
     day_len_f = cs.day_len // cs.freq
 
-    for i in range(1, 7):
+    if patients is None:
+        patients = range(1, 7)
+    else:
+        patients = list(map(int, patients.split(',')))
+
+    for i in patients:
         dir = os.path.join(cs.path, "study", dataset, model, mode, "patient " + str(i))
         """ PREPROCESSING ALL FEATURES"""
         printd("Preprocessing patient " + str(i))
@@ -96,6 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str)
     parser.add_argument("--number_comb", type=int)
     parser.add_argument("--features_comb", type=str)
+    parser.add_argument("--patients", type=str)
 
     args = parser.parse_args()
 
@@ -105,4 +111,5 @@ if __name__ == "__main__":
          dataset=args.dataset,
          mode=args.mode,
          number_comb=args.number_comb,
-         features_comb=args.features_comb)
+         features_comb=args.features_comb,
+         patients=args.patients)
