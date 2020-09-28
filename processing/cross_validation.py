@@ -3,7 +3,9 @@ from misc.utils import printd
 from postprocessing.metrics.rmse import RMSE
 from processing.hyperparameters_tuning import compute_coarse_params_grid, compute_refined_params_grid
 
-def make_predictions_tl(subject, model_class, params, ph, train, valid, test, weights_file=None, eval_mode="valid", fit=True, save_model_file=None):
+
+def make_predictions_tl(subject, model_class, params, ph, train, valid, test, weights_file=None, eval_mode="valid",
+                        fit=True, save_model_file=None):
     """
     Identical to make_predictions but for model that are transfered (use of weight file
     """
@@ -27,7 +29,7 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
     return results
 
 
-def make_predictions(subject, model_class, params, ph, train, valid, test, mode="valid",save_model_file=None):
+def make_predictions(subject, model_class, params, ph, train, valid, test, mode="valid", save_model_file=None):
     """
     For every train, valid, test fold, fit the given model with params at prediciton horizon on the training set,
     and make predictions on either the validation or testing set

@@ -18,13 +18,15 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
         all_feat = ["CHO", "insulin", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
     else:
         all_feat = features_comb.split(',')
+
     combs = []
     if number_comb is None:
-        for i in range(0, len(all_feat) + 1):
-            els = [list(x) for x in itertools.combinations(all_feat, i)]
-            combs.extend(els)
+        number_comb = range(0, len(all_feat) + 1)
     else:
-        combs = [list(x) for x in itertools.combinations(all_feat, number_comb)]
+        number_comb = list(map(int, number_comb.split(',')))
+    for i in number_comb:
+        els = [list(x) for x in itertools.combinations(all_feat, i)]
+        combs.extend(els)
 
     combs = [ele for ele in combs if
              ("CPB" not in ele or "CHO" not in ele) and ("IOB" not in ele or "insulin" not in ele) and (
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--params", type=str)
     parser.add_argument("--ph", type=int)
     parser.add_argument("--mode", type=str)
-    parser.add_argument("--number_comb", type=int)
+    parser.add_argument("--number_comb", type=str)
     parser.add_argument("--features_comb", type=str)
     parser.add_argument("--patients", type=str)
 

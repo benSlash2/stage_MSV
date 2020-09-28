@@ -24,6 +24,6 @@ def print_ig_sample(features, attr, results, sample=0):
     # _ = viz.visualize_image_attr(attr_sample, image, method='heat_map', cmap=default_cmap, show_colorbar=True,
     #                              sign='positive', outlier_perc=1)
 
-    _ = viz.visualize_image_attr_multiple(attr, features, ["original_image", "heat_map"], ["all", "absolute_value"],
-                                          cmap=default_cmap, show_colorbar=True, titles=["true cd =" + str(true),
-                                                                                         "predicted cd = " + str(pred)])
+    _ = viz.visualize_image_attr_multiple(attr, features, ["original_image", "heat_map", "heat_map", "heat_map"],
+                                          ["all", "absolute_value", "negative", "positive"],
+                                          cmap=default_cmap, show_colorbar=True)
