@@ -24,6 +24,7 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
         number_comb = range(0, len(all_feat) + 1)
     else:
         number_comb = list(map(int, number_comb.split(',')))
+
     for i in number_comb:
         els = [list(x) for x in itertools.combinations(all_feat, i)]
         combs.extend(els)
@@ -63,21 +64,27 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
             for j in range(5):
                 torch.manual_seed(j)
                 """ MODEL TRAINING & TUNING """
-                file = os.path.join(dir, " + ".join(ele), "seed " + str(j), "weights", "weights")
+                if not ele:
+                    file = os.path.join(dir, "reference", "seed " + str(j), "weights", "weights")
+                else:
+                    file = os.path.join(dir, " + ".join(ele), "seed " + str(j), "weights", "weights")
                 raw_results = make_predictions(str(i), model_class, params, ph_f, train, valid, test, mode=mode,
                                                save_model_file=file)
                 """ POST-PROCESSING """
                 raw_results = postprocessing(raw_results, scalers, dataset)
                 """ EVALUATION """
-                file_save = os.path.join(" + ".join(ele), "seed " + str(j))
+                if not ele:
+                    file_save = os.path.join("reference", "seed " + str(j))
+                else:
+                    file_save = os.path.join(" + ".join(ele), "seed " + str(j))
                 results = ResultsSubject(model, file_save, ph, dataset, str(i), params=params,
                                          results=raw_results, study=True, mode=mode)
                 printd(results.compute_mean_std_results())
-            # global_results = ResultsAllSeeds(model, mode, " + ".join(ele), ph, dataset, str(i))
 
     """ GLOBAL RESULTS"""
-    experiments = [" + ".join(ele) if len(ele) > 1 else ele[0] for ele in combs]
+    experiments = [" + ".join(ele) if len(ele) > 1 else ele[0] if len(ele) == 1 else "reference" for ele in combs]
     ResultsAllPatientsAllExp(model, mode, experiments, ph, dataset)
+
 
 if __name__ == "__main__":
     """ The main function contains the following optional parameters:

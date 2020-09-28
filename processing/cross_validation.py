@@ -49,7 +49,7 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         model = model_class(subject, ph, params, train_i, valid_i, test_i)
         model.fit()
         res = model.predict(dataset=mode)
-        attr = model.integrated_gradients(dataset=mode, file=model.checkpoint_file)
+        # attr = model.integrated_gradients(dataset=mode, file=model.checkpoint_file)
         results.append(res)
 
         if save_model_file is not None:

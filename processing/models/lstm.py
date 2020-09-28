@@ -77,12 +77,7 @@ class LSTM(DeepTLPredictor):
         return [features, y]
 
     def integrated_gradients(self, dataset, file):
-        self.model = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
-                                      self.params["dropout_layer"], self.params["domain_adversarial"], self.n_domains)
-        self.model.cuda()
         self.model.load_state_dict(torch.load(file))
-        self.model.eval()
-
         x, y, _ = self._str2dataset(dataset)
         x = torch.Tensor(x).cuda()
         x.requires_grad_()
