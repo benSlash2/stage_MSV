@@ -10,7 +10,7 @@ class Predictor(ABC):
         self.subject = subject
         self.params = params
         self.ph = ph
-
+        self.input_names = self._input_names(valid)
         self.train_x, self.train_y, self.train_t = self._reshape(train)
         self.valid_x, self.valid_y, self.valid_t = self._reshape(valid)
         self.test_x, self.test_y, self.test_t = self._reshape(test)
@@ -35,6 +35,18 @@ class Predictor(ABC):
         x = data.drop(["y", "datetime", "time"], axis=1)
 
         return x, y, t
+
+    def _input_names(self, data):
+        """
+        Extract (and reshape if needed, depending on the model) the time, inputs, outputs of the data samples
+        :param data: pandas DataFrame containing the samples;
+        :return: time of samples, inputs samples, outputs samples
+        """
+        g = data.loc[:, [col for col in data.columns if "glucose" in col]].values
+        if g.size != 0:
+            return ["glucose"]
+        else:
+            return []
 
     def _str2dataset(self, dataset_name):
         if dataset_name in ["train", "training"]:

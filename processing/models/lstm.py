@@ -79,16 +79,25 @@ class LSTM(DeepTLPredictor):
     def integrated_gradients(self, dataset, file):
         self.model.load_state_dict(torch.load(file))
         x, y, _ = self._str2dataset(dataset)
+        baselines = np.zeros(x.shape)
+        names = self.input_names
+        for i in range(len(names)):
+            if names[i] == "glucose":
+                mean = np.mean(y)
+                baselines[:, :, i] = mean * np.ones(x.shape[0:2])
+            # if names[i] == "mets":
+            #     baselines[:, :, i] = mean * np.ones(x.shape[0:2])
+
         x = torch.Tensor(x).cuda()
         x.requires_grad_()
-
+        baselines = torch.Tensor(baselines).cuda()
         self.model.train()
         ig = IntegratedGradients(self.model)
         attr = []
         for i in range(len(x) // 10):
-            attr_i = ig.attribute(x[i * 10:(i + 1)*10], n_steps=10)
+            attr_i = ig.attribute(x[i * 10:(i + 1) * 10], baselines=baselines[i * 10:(i + 1) * 10], n_steps=50)
             attr.append(attr_i.cpu().detach().numpy())
-        attr_i = ig.attribute(x[(i + 1) * 10:len(x)], n_steps=10)
+        attr_i = ig.attribute(x[(i + 1) * 10:len(x)], baselines=baselines[(i + 1) * 10:len(x)], n_steps=50)
         attr.append(attr_i.cpu().detach().numpy())
         attr = np.concatenate(attr, axis=0)
         return attr
@@ -110,7 +119,7 @@ class LSTM(DeepTLPredictor):
 
         def forward(self, xb):
             features, _ = self.encoder(xb)
-            prediction = self.regressor(features[:,-1])
+            prediction = self.regressor(features[:, -1])
             if self.domain_classifier is not None:
                 # domain = self.domain_classifier(self.GradReverse.apply(features[:,-1]))
                 domain = self.domain_classifier(features[:,-1])

@@ -1,9 +1,10 @@
-from postprocessing.results import ResultsSubject, ResultsAllPatientsAllExp
+from postprocessing.results import ResultsSubject, ResultsAllPatientsAllExp, ResultsAllExp
 from postprocessing.postprocessing import postprocessing
 from preprocessing.preprocessing import preprocessing_idiab_full, preprocessing_idiab_select
 import argparse
 import itertools
 import torch
+import numpy as np
 import misc.constants as cs
 from misc.utils import printd
 from processing.cross_validation import make_predictions
@@ -84,6 +85,36 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
     """ GLOBAL RESULTS"""
     experiments = [" + ".join(ele) if len(ele) > 1 else ele[0] if len(ele) == 1 else "reference" for ele in combs]
     ResultsAllPatientsAllExp(model, mode, experiments, ph, dataset)
+    for i in patients:
+        ResultsAllExp(model, mode, experiments, ph, dataset, str(i))
+
+    """ RESULTS VISUALIZATION"""
+    for i in patients:
+        printd("-------------------------------- Patient", str(i), "--------------------------------")
+        file = os.path.join(cs.path, "study", "idiab", "lstm", "valid", "patient " + str(i), "results.npy")
+        param, results = np.load(file, allow_pickle=True)
+        mean_RMSE = {key:results[key][0]["RMSE"] for key in results.keys()}
+        min_RMSE = min(mean_RMSE, key = lambda k:mean_RMSE[k])
+        printd("The best RMSE model for patient", str(i), "is", min_RMSE, "with ", results[min_RMSE])
+        mean_MAPE = {key: results[key][0]["MAPE"] for key in results.keys()}
+        min_MAPE = min(mean_MAPE, key=lambda k: mean_MAPE[k])
+        printd("The best MAPE model for patient", str(i), "is", min_MAPE, "with ", results[min_MAPE])
+        mean_MASE = {key: results[key][0]["MASE"] for key in results.keys()}
+        min_MASE = min(mean_MASE, key=lambda k: mean_MASE[k])
+        printd("The best MASE model for patient", str(i), "is", min_MASE, "with ", results[min_MASE])
+
+    printd("-------------------------------- Global -------------------------------")
+    file = os.path.join(cs.path, "study", "idiab", "lstm", "valid", "metrics.npy")
+    param, results = np.load(file, allow_pickle=True)
+    mean_RMSE = {key: results[key][0]["RMSE"] for key in results.keys()}
+    min_RMSE = min(mean_RMSE, key=lambda k: mean_RMSE[k])
+    printd("The best global RMSE model is", min_RMSE, "with ", results[min_RMSE])
+    mean_MAPE = {key: results[key][0]["MAPE"] for key in results.keys()}
+    min_MAPE = min(mean_MAPE, key=lambda k: mean_MAPE[k])
+    printd("The best global MAPE model is", min_MAPE, "with ", results[min_MAPE])
+    mean_MASE = {key: results[key][0]["MASE"] for key in results.keys()}
+    min_MASE = min(mean_MASE, key=lambda k: mean_MASE[k])
+    printd("The best global MASE model is", min_MASE, "with ", results[min_MASE])
 
 
 if __name__ == "__main__":

@@ -123,3 +123,23 @@ class DeepTLPredictor(Predictor):
         features = features.reshape(features.shape[0], -1)
 
         return [features, y]
+
+    def _input_names (self, data):
+        g = data.loc[:, [col for col in data.columns if "glucose" in col]].values
+        cho = data.loc[:, [col for col in data.columns if "CHO" in col]].values
+        ins = data.loc[:, [col for col in data.columns if "insulin" in col]].values
+        mets = data.loc[:, [col for col in data.columns if "mets" in col]].values
+        cal = data.loc[:, [col for col in data.columns if "calories" in col]].values
+        heart = data.loc[:, [col for col in data.columns if "heartrate" in col]].values
+        steps = data.loc[:, [col for col in data.columns if "steps" in col]].values
+        cpb = data.loc[:, [col for col in data.columns if "CPB" in col]].values
+        iob = data.loc[:, [col for col in data.columns if "IOB" in col]].values
+        aob = data.loc[:, [col for col in data.columns if "AOB" in col]].values
+
+        name = {"glucose": g, "CHO": cho, "insulin": ins, "mets": mets, "calories": cal, "heartrate": heart,
+                "steps": steps, "CPB": cpb, "IOB": iob, "AOB": aob}
+        l = []
+        for i in name.keys():
+            if name[i].size != 0:
+                l.append(i)
+        return l

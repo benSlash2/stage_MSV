@@ -104,7 +104,7 @@ def predict(model, ds):
         preds = [ts.cpu().detach().numpy() for ts in preds]
         trues = trues.transpose(1,0)
     else:
-        preds = np.reshape(preds.cpu().detach().numpy(),(-1,1))
+        preds = np.reshape(preds.cpu().detach().numpy(), (-1, 1))
 
     return trues, preds
 
