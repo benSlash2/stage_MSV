@@ -95,6 +95,8 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
         param, results = np.load(file, allow_pickle=True)
         mean_RMSE = {key:results[key][0]["RMSE"] for key in results.keys()}
         min_RMSE = min(mean_RMSE, key = lambda k:mean_RMSE[k])
+        printd("Ref", results["reference"][0]["RMSE"])
+        printd(results[min_RMSE][0]["RMSE"] / results["reference"][0]["RMSE"])
         printd("The best RMSE model for patient", str(i), "is", min_RMSE, "with ", results[min_RMSE])
         mean_MAPE = {key: results[key][0]["MAPE"] for key in results.keys()}
         min_MAPE = min(mean_MAPE, key=lambda k: mean_MAPE[k])

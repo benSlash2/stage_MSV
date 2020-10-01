@@ -63,6 +63,7 @@ def printd(*msg):
     print(date, " ".join(str(v) for v in msg))
     sys.stdout.flush()
 
+
 def print_latex(mean, std, label=""):
     print(
         "\\textbf{" + label + "} & " + " & ".join(
