@@ -102,7 +102,7 @@ def predict(model, ds):
     preds = model(dl.dataset.tensors[0])
     if isinstance(preds, tuple):
         preds = [ts.cpu().detach().numpy() for ts in preds]
-        trues = trues.transpose(1,0)
+        trues = trues.transpose(1, 0)
     else:
         preds = np.reshape(preds.cpu().detach().numpy(), (-1, 1))
 

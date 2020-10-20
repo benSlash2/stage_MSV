@@ -5,10 +5,10 @@ def domain_relative_distance(features, y):
     """
     Domains Relative Distance (DRD): it measures the proximity of samples from different domains. It is computed as
     the average ratio between the minimal distance between samples of different domains and the minimal distance b
-    etween any sample. If the ratio is small, it means that samples from different domains are in average close to
+    between any sample. If the ratio is small, it means that samples from different domains are in average close to
     each other in the features space. On the other hand, if the ratio is big, those samples are far from each other in
     the features space.
-    :param features: samples' features of shape (n_samples, n_featuers)
+    :param features: samples' features of shape (n_samples, n_features)
     :param y: samples' domains of shape (n_samples)
     :return: DRD metric
     """

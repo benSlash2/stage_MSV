@@ -1,13 +1,11 @@
 from .pytorch_tools.gradient_reversal import RevGrad
-from torch.utils.data import TensorDataset
 import torch
 import os
 from processing.models.deep_tl_predictor import DeepTLPredictor
 import numpy as np
 import torch.nn as nn
 from .pytorch_tools.training import fit, predict
-from captum.attr import IntegratedGradients, GradientShap, Occlusion, NoiseTunnel
-from captum.attr import visualization as viz
+from captum.attr import IntegratedGradients
 
 
 class LSTM(DeepTLPredictor):
@@ -17,16 +15,14 @@ class LSTM(DeepTLPredictor):
         self.model = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
                                       self.params["dropout_layer"], self.params["domain_adversarial"], self.n_domains)
         self.model.cuda()
+        self.loss_func = self._compute_loss_func()
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
 
     def fit(self):
         x_train, y_train, t_train = self._str2dataset("train")
         x_valid, y_valid, t_valid = self._str2dataset("valid")
         train_ds = self._to_tensor_ds(x_train, y_train)
         valid_ds = self._to_tensor_ds(x_valid, y_valid)
-
-        self.loss_func = self._compute_loss_func()
-
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
 
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
             self.params["patience"], self.checkpoint_file)
@@ -108,9 +104,7 @@ class LSTM(DeepTLPredictor):
             super().__init__()
 
             self.encoder = nn.LSTM(n_in, neurons[0], len(neurons), dropout=dropout_layer, batch_first=True)
-
             self.regressor = nn.Linear(neurons[-1], 1)
-
             self.domain_classifier = nn.Sequential(
                 RevGrad(),
                 nn.Linear(neurons[-1], n_domains),
@@ -122,7 +116,7 @@ class LSTM(DeepTLPredictor):
             prediction = self.regressor(features[:, -1])
             if self.domain_classifier is not None:
                 # domain = self.domain_classifier(self.GradReverse.apply(features[:,-1]))
-                domain = self.domain_classifier(features[:,-1])
+                domain = self.domain_classifier(features[:, -1])
                 return prediction.reshape((-1)), domain
             else:
                 return prediction.reshape((-1))

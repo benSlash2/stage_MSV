@@ -3,7 +3,7 @@ from postprocessing.metrics.tools.cg_ega_tools import reshape_results, extract_c
 from .tools.cg_ega_tools import _all, _any
 
 
-class P_EGA():
+class PEga:
     """
         The Point-Error Grid Analysis (P-EGA) gives an estimation of the clinical acceptability of the glucose
         predictions based on their point-accuracy. It is also known as the Clarke Error Grid Analysis (Clarke EGA).
@@ -28,7 +28,7 @@ class P_EGA():
             Full version of the P-EGA, which consists of an array giving for every prediction (row), its mark vector
             (column). There are 5 columns representing the mark A, B, C, D, and E.
 
-            :return: numy array of shape (number of predictions, 5)
+            :return: numpy array of shape (number of predictions, 5)
         """
         y_true, y_pred, dy_true, dy_pred = extract_columns_from_results(self.results)
 
@@ -53,7 +53,7 @@ class P_EGA():
             ])
         ])] = 20
 
-        A = _any([
+        a = _any([
             _all([
                 np.less_equal(y_pred, 70 + mod),
                 np.less_equal(y_true, 70)
@@ -64,7 +64,7 @@ class P_EGA():
             ])
         ])
 
-        E = _any([
+        e = _any([
             _all([
                 np.greater(y_true, 180),
                 np.less(y_pred, 70 - mod)
@@ -75,7 +75,7 @@ class P_EGA():
             ])
         ])
 
-        D = _any([
+        d = _any([
             _all([
                 np.greater(y_pred, 70 + mod),
                 np.greater(y_pred, y_true * 6 / 5 + mod),
@@ -89,7 +89,7 @@ class P_EGA():
             ])
         ])
 
-        C = _any([
+        c = _any([
             _all([
                 np.greater(y_true, 70),
                 np.greater(y_pred, y_true * 22 / 17 + (180 - 70 * 22 / 17) + mod)
@@ -102,19 +102,19 @@ class P_EGA():
 
         # B being the weirdest zone in the P-EGA, we compute it last by saying
         # it's all the points that have not been classified yet.
-        B = _all([
-            np.equal(A, False),
-            np.equal(C, False),
-            np.equal(D, False),
-            np.equal(E, False),
+        b = _all([
+            np.equal(a, False),
+            np.equal(c, False),
+            np.equal(d, False),
+            np.equal(e, False),
         ])
 
-        return np.concatenate([A, B, C, D, E], axis=1)
+        return np.concatenate([a, b, c, d, e], axis=1)
 
     def mean(self):
-        return np.mean(self.full(),axis=0)
+        return np.mean(self.full(), axis=0)
 
     def a_plus_b(self):
         full = self.full()
-        a_plus_b = full[:,0] + full[:,1]
+        a_plus_b = full[:, 0] + full[:, 1]
         return np.sum(a_plus_b) / len(a_plus_b)

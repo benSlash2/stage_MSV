@@ -3,21 +3,19 @@ import os
 import numpy as np
 import misc
 import misc.constants as cs
-import pickle
-from pathlib import Path
 from preprocessing.preprocessing import preprocessing
 from processing.models.retain_atl import RETAIN_ATL
 from misc.utils import locate_params
 import pandas as pd
 
 
-class RetainAnalyzer():
+class RetainAnalyzer:
     """
         Implements all the visualisation described in the publication:
             - plot sample contribution
             - plot mean absolute normalized contribution
             - plot max absolute normalized contribution
-            - plot evolution of stimulti through time
+            - plot evolution of stimuli through time
     """
 
     def __init__(self, dataset, ph, hist, experiment, params):
@@ -29,7 +27,7 @@ class RetainAnalyzer():
         self.train, self.valid, self.test, self.scalers = {}, {}, {}, {}
 
     def _load_subject_data(self, subject):
-        if not subject in list(self.train.keys()):
+        if subject not in list(self.train.keys()):
             train_sbj, valid_sbj, test_sbj, scalers_sbj = preprocessing(self.dataset, subject, self.ph,
                                                                         self.hist, cs.day_len_f)
             self.train[subject] = train_sbj
@@ -39,7 +37,7 @@ class RetainAnalyzer():
 
     def _load_all_subjects_data(self):
         for subject in misc.datasets.datasets[self.dataset]["subjects"]:
-            self._load_all_subjects_data(subject)
+            self._load_subject_data(subject)
 
     def _create_models(self, subject):
         models = []
@@ -145,8 +143,9 @@ class RetainAnalyzer():
             for stimuli_data_split, scalers_split in zip(stimuli_data, self.scalers[subject])]
 
         non_zero_stimuli_idx = [np.where(~np.isclose(stimuli_data_split, 0))[0] for stimuli_data_split in stimuli_data]
-        toofar_idx = [_ + max_lag > len(data[0]) for _ in non_zero_stimuli_idx]
-        non_zero_stimuli_idx = [_[~toofar_idx_split] for _, toofar_idx_split in zip(non_zero_stimuli_idx, toofar_idx)]
+        too_far_idx = [_ + max_lag > len(data[0]) for _ in non_zero_stimuli_idx]
+        non_zero_stimuli_idx = [_[~too_far_idx_split] for _, too_far_idx_split in
+                                zip(non_zero_stimuli_idx, too_far_idx)]
         return non_zero_stimuli_idx
 
     def compute_contrib_after_stimuli_subject(self, stimuli, subject, eval_set="test", lag=0):
@@ -191,7 +190,8 @@ class RetainAnalyzer():
         std_contrib_after_stimuli = np.transpose(std_contrib_after_stimuli, (1, 0, 2)).reshape(hist_f, -1)
 
         columns = np.c_[["glucose_" + str(i) for i in range(max_lag)], ["CHO_" + str(i) for i in range(max_lag)],
-                        ["insulin_" + str(i) for i in range(max_lag)], ["mets_" + str(i) for i in range(max_lag)], ["calories_" + str(i) for i in range(max_lag)], ["heartrate_" + str(i) for i in range(max_lag)]]
+                        ["insulin_" + str(i) for i in range(max_lag)], ["mets_" + str(i) for i in range(max_lag)],
+                        ["calories_" + str(i) for i in range(max_lag)], ["heartrate_" + str(i) for i in range(max_lag)]]
         columns = np.reshape(columns, (-1))
 
         df_mean = pd.DataFrame(data=mean_contrib_after_stimuli, columns=columns)
@@ -202,23 +202,25 @@ class RetainAnalyzer():
     def filter_contributions(self, filter, subject="all", eval_set="test"):
         """ three filters supported : hypo, eu, hyper"""
 
-        def compute_filter_mask(data,scaler,filter):
+        def compute_filter_mask(data, scaler, filter_1):
             mask = None
             y_scaled = data.y * scaler.scale_[-1] + scaler.mean_[-1]
-            if filter=="hypo":
+            if filter_1 == "hypo":
                 mask = y_scaled <= 70.0+1e-5
-            elif filter=="eu":
+            elif filter_1 == "eu":
                 mask = (y_scaled > 70.0+1e-5) & (y_scaled <= 180.0+1e-5)
-            elif filter == "hyper":
+            elif filter_1 == "hyper":
                 mask = y_scaled > 180.0+1e-5
             return mask
 
-        def compute_contrib_subject(sbj):
-            contrib_sbj = self.compute_contribution_subject(sbj, eval_set)
-            data = self._data_from_eval_set(sbj, eval_set)
-            masks = [compute_filter_mask(data_split, scaler_split, filter) for data_split, scaler_split in zip(data,self.scalers[sbj])]
-            contrib_sbj = [contrib_sbj_split[mask_split] for contrib_sbj_split, mask_split in zip(contrib_sbj, masks)]
-            return contrib_sbj
+        def compute_contrib_subject(subj):
+            contrib_subj = self.compute_contribution_subject(subj, eval_set)
+            data = self._data_from_eval_set(subj, eval_set)
+            masks = [compute_filter_mask(data_split, scaler_split, filter) for data_split, scaler_split in
+                     zip(data, self.scalers[subj])]
+            contrib_subj = [contrib_subj_split[mask_split] for contrib_subj_split, mask_split in
+                            zip(contrib_subj, masks)]
+            return contrib_subj
 
         if subject == "all":
             contrib = []
@@ -233,14 +235,14 @@ class RetainAnalyzer():
 
         return mean_contrib
 
-    def mean_contrib_glycemia_region(self,region,subject,eval_set="test"):
-        contrib = self.filter_contributions(region,subject,eval_set)
+    def mean_contrib_glycemia_region(self, region, subject, eval_set="test"):
+        contrib = self.filter_contributions(region, subject, eval_set)
 
         if subject == "all":
-            mean_contrib_sbj = [np.mean(contrib_sbj,axis=0) for contrib_sbj in contrib]
-            mean_contrib, std_contrib = np.mean(mean_contrib_sbj,axis=0), np.std(mean_contrib_sbj,axis=0)
+            mean_contrib_sbj = [np.mean(contrib_sbj, axis=0) for contrib_sbj in contrib]
+            mean_contrib, std_contrib = np.mean(mean_contrib_sbj, axis=0), np.std(mean_contrib_sbj, axis=0)
         else:
-            mean_contrib, std_contrib = np.mean(contrib,axis=0), np.std(contrib,axis=0)
+            mean_contrib, std_contrib = np.mean(contrib, axis=0), np.std(contrib, axis=0)
 
         return mean_contrib, std_contrib
 
@@ -306,21 +308,23 @@ class RetainAnalyzer():
 
         plt.plot(time, mean_max_contrib[:, 3], color="yellow", label="mets")
         plt.fill_between(time, mean_max_contrib[:, 3] - std_max_contrib[:, 3],
-                         mean_max_contrib[:, 3] + std_max_contrib[:, 3], alpha=0.5, edgecolor='yellow', facecolor="yellow")
+                         mean_max_contrib[:, 3] + std_max_contrib[:, 3], alpha=0.5, edgecolor='yellow',
+                         facecolor="yellow")
 
         plt.plot(time, mean_max_contrib[:, 4], color="purple", label="calories")
         plt.fill_between(time, mean_max_contrib[:, 4] - std_max_contrib[:, 4],
-                         mean_max_contrib[:, 4] + std_max_contrib[:, 4], alpha=0.5, edgecolor='purple', facecolor="purple")
+                         mean_max_contrib[:, 4] + std_max_contrib[:, 4], alpha=0.5, edgecolor='purple',
+                         facecolor="purple")
 
         plt.plot(time, mean_max_contrib[:, 5], color="orange", label="heartrate")
         plt.fill_between(time, mean_max_contrib[:, 5] - std_max_contrib[:, 5],
-                         mean_max_contrib[:, 5] + std_max_contrib[:, 5], alpha=0.5, edgecolor='orange', facecolor="orange")
+                         mean_max_contrib[:, 5] + std_max_contrib[:, 5], alpha=0.5, edgecolor='orange',
+                         facecolor="orange")
 
         plt.xlabel("History [min]")
         plt.ylabel("Maximum absolute normalized contribution")
         plt.legend()
         plt.title("Maximum absolute normalized contribution for dataset " + self.dataset + " and subject " + subject)
-
 
     def plot_mean_contribution(self, subject="all", eval_set="test"):
         mean_mean_contrib, std_mean_contrib = self.compute_mean_std_mean_contrib(subject, eval_set)
@@ -330,7 +334,8 @@ class RetainAnalyzer():
         plt.figure()
         plt.plot(time, mean_mean_contrib[:, 0], color="blue", label="glycemia")
         plt.fill_between(time, mean_mean_contrib[:, 0] - std_mean_contrib[:, 0],
-                         mean_mean_contrib[:, 0] + std_mean_contrib[:, 0], alpha=0.5, edgecolor='blue', facecolor="blue")
+                         mean_mean_contrib[:, 0] + std_mean_contrib[:, 0], alpha=0.5, edgecolor='blue',
+                         facecolor="blue")
 
         plt.plot(time, mean_mean_contrib[:, 2], color="green", label="insulin")
         plt.fill_between(time, mean_mean_contrib[:, 2] - std_mean_contrib[:, 2],
@@ -343,15 +348,18 @@ class RetainAnalyzer():
 
         plt.plot(time, mean_mean_contrib[:, 3], color="yellow", label="mets")
         plt.fill_between(time, mean_mean_contrib[:, 3] - std_mean_contrib[:, 3],
-                         mean_mean_contrib[:, 3] + std_mean_contrib[:, 3], alpha=0.5, edgecolor='yellow', facecolor="yellow")
+                         mean_mean_contrib[:, 3] + std_mean_contrib[:, 3], alpha=0.5, edgecolor='yellow',
+                         facecolor="yellow")
 
         plt.plot(time, mean_mean_contrib[:, 4], color="purple", label="calories")
         plt.fill_between(time, mean_mean_contrib[:, 4] - std_mean_contrib[:, 4],
-                         mean_mean_contrib[:, 4] + std_mean_contrib[:, 4], alpha=0.5, edgecolor='purple', facecolor="purple")
+                         mean_mean_contrib[:, 4] + std_mean_contrib[:, 4], alpha=0.5, edgecolor='purple',
+                         facecolor="purple")
 
         plt.plot(time, mean_mean_contrib[:, 5], color="orange", label="heartrate")
         plt.fill_between(time, mean_mean_contrib[:, 5] - std_mean_contrib[:, 5],
-                         mean_mean_contrib[:, 5] + std_mean_contrib[:, 5], alpha=0.5, edgecolor='orange', facecolor="orange")
+                         mean_mean_contrib[:, 5] + std_mean_contrib[:, 5], alpha=0.5, edgecolor='orange',
+                         facecolor="orange")
 
         plt.xlabel("History [min]")
         plt.ylabel("Mean absolute normalized contribution")

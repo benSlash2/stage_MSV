@@ -7,10 +7,11 @@ from preprocessing.preprocessing import preprocessing
 from misc.utils import locate_params, locate_model
 
 
-class TreeAnalyzer():
+class TreeAnalyzer:
     """
         Analyse tree-based models through Gini feature importance or permutation feature importance
     """
+
     def __init__(self, dataset, ph, hist, experiment, model, params):
         self.dataset = dataset
         self.ph = ph // cs.freq
@@ -21,7 +22,7 @@ class TreeAnalyzer():
         self.train, self.valid, self.test, self.scalers = {}, {}, {}, {}
 
     def _load_subject_data(self, subject):
-        if not subject in list(self.train.keys()):
+        if subject not in list(self.train.keys()):
             train_sbj, valid_sbj, test_sbj, scalers_sbj = preprocessing(self.dataset, subject, self.ph,
                                                                         self.hist, cs.day_len_f)
             self.train[subject] = train_sbj
@@ -31,7 +32,7 @@ class TreeAnalyzer():
 
     def _load_all_subjects_data(self):
         for subject in misc.datasets.datasets[self.dataset]["subjects"]:
-            self._load_all_subjects_data(subject)
+            self._load_subject_data(subject)
 
     def _create_models(self, subject):
         models = []
@@ -49,19 +50,19 @@ class TreeAnalyzer():
         self._load_subject_data(subject)
         models = self._create_models(subject)
 
-        feature_importances = []
+        feature_importance = []
         for model in models:
-            features_importances_split = model.feature_importances(method, eval_set)
-            features_importances_split = np.reshape(features_importances_split,
-                                                    (-1, self.params["hist"] // cs.freq)).transpose(1, 0)
-            feature_importances.append(features_importances_split)
+            features_importance_split = model.feature_importances(method, eval_set)
+            features_importance_split = np.reshape(features_importance_split,
+                                                   (-1, self.params["hist"] // cs.freq)).transpose(1, 0)
+            feature_importance.append(features_importance_split)
 
-        # return feature_importances
+        # return feature_importance
 
-        feature_importances = np.flip(feature_importances, axis=1)
-        mean_feature_importances, std_feature_importances = np.mean(feature_importances, axis=0), \
-                                                            np.std(feature_importances, axis=0)
-        return mean_feature_importances, std_feature_importances
+        feature_importance = np.flip(feature_importance, axis=1)
+        mean_feature_importance, std_feature_importance = np.mean(feature_importance, axis=0), \
+                                                          np.std(feature_importance, axis=0)
+        return mean_feature_importance, std_feature_importance
 
     def compute_mean_std_feature_importance(self, subject, method="gini", eval_set="test"):
         if subject == "all":
@@ -91,12 +92,14 @@ class TreeAnalyzer():
 
         if plot_std:
             plt.fill_between(time, mean_max_contrib[:, 0] - std_max_contrib[:, 0],
-                             mean_max_contrib[:, 0] + std_max_contrib[:, 0], alpha=0.5, edgecolor='blue', facecolor="blue")
+                             mean_max_contrib[:, 0] + std_max_contrib[:, 0], alpha=0.5, edgecolor='blue',
+                             facecolor="blue")
             plt.fill_between(time, mean_max_contrib[:, 2] - std_max_contrib[:, 2],
                              mean_max_contrib[:, 2] + std_max_contrib[:, 2], alpha=0.5, edgecolor='green',
                              facecolor="green")
             plt.fill_between(time, mean_max_contrib[:, 1] - std_max_contrib[:, 1],
-                             mean_max_contrib[:, 1] + std_max_contrib[:, 1], alpha=0.5, edgecolor='red', facecolor="red")
+                             mean_max_contrib[:, 1] + std_max_contrib[:, 1], alpha=0.5, edgecolor='red',
+                             facecolor="red")
 
         plt.xlabel("History [min]")
         plt.ylabel("Feature " + method + " importance")

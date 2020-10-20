@@ -3,7 +3,7 @@ from postprocessing.metrics.tools.cg_ega_tools import reshape_results, extract_c
 from .tools.cg_ega_tools import _all, _any
 
 
-class R_EGA():
+class REga:
     """
         The Rate-Error Grid Analysis (P-EGA) gives an estimation of the clinical acceptability of the glucose
         predictions based on their rate-of-change-accuracy (the accuracy of the predicted variations).
@@ -28,11 +28,11 @@ class R_EGA():
             Full version of the R-EGA, which consists of an array giving for every prediction (row), its mark vector
             (column). There are 8 columns representing the mark A, B, uC, lC, uD, lD, uE, and lE.
 
-            :return: numy array of shape (number of predictions, 8)
+            :return: numpy array of shape (number of predictions, 8)
         """
         y_true, y_pred, dy_true, dy_pred = extract_columns_from_results(self.results)
 
-        A = _any([
+        a = _any([
             _all([  # upper and lower
                 np.greater_equal(dy_pred, dy_true - 1),
                 np.less_equal(dy_pred, dy_true + 1)
@@ -47,8 +47,8 @@ class R_EGA():
             ])
         ])
 
-        B = _all([
-            np.equal(A, False),  # not in A but satisfies the cond below
+        b = _all([
+            np.equal(a, False),  # not in A but satisfies the cond below
             _any([
                 _all([
                     np.less_equal(dy_pred, -1),
@@ -65,47 +65,46 @@ class R_EGA():
             ])
         ])
 
-        uC = _all([
+        uc = _all([
             np.less(dy_true, 1),
             np.greater_equal(dy_true, -1),
             np.greater(dy_pred, dy_true + 2)
         ])
 
-        lC = _all([
+        lc = _all([
             np.less_equal(dy_true, 1),
             np.greater(dy_true, -1),
             np.less(dy_pred, dy_true - 2)
         ])
 
-        uD = _all([
+        ud = _all([
             np.less_equal(dy_pred, 1),
             np.greater_equal(dy_pred, -1),
             np.greater(dy_pred, dy_true + 2)
         ])
 
-        lD = _all([
+        ld = _all([
             np.less_equal(dy_pred, 1),
             np.greater_equal(dy_pred, -1),
             np.less(dy_pred, dy_true - 2)
         ])
 
-        uE = _all([
+        ue = _all([
             np.greater(dy_pred, 1),
             np.less(dy_true, -1)
         ])
 
-        lE = _all([
+        le = _all([
             np.less(dy_pred, -1),
             np.greater(dy_true, 1)
         ])
 
-        return np.concatenate([A, B, uC, lC, uD, lD, uE, lE], axis=1)
+        return np.concatenate([a, b, uc, lc, ud, ld, ue, le], axis=1)
 
     def mean(self):
-        return np.mean(self.full(),axis=0)
-
+        return np.mean(self.full(), axis=0)
 
     def a_plus_b(self):
         full = self.full()
-        a_plus_b = full[:,0] + full[:,1]
+        a_plus_b = full[:, 0] + full[:, 1]
         return np.sum(a_plus_b) / len(a_plus_b)

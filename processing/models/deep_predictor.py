@@ -8,6 +8,7 @@ from misc.utils import printd
 import misc.constants as cs
 from torch import Tensor
 
+
 class DeepPredictor(Predictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
@@ -25,7 +26,7 @@ class DeepPredictor(Predictor):
         os.remove(self.checkpoint_file)
 
     def _compute_checkpoint_file(self, model_name):
-        rnd = np.random.randint(1e7)
+        rnd = np.random.randint(int(1e7))
         checkpoint_file = os.path.join(cs.path, "tmp", "checkpoints", model_name + "_" + str(rnd) + ".pt")
         printd("Saved model's file:", checkpoint_file)
         return checkpoint_file
@@ -42,7 +43,7 @@ class DeepPredictor(Predictor):
         cho = data.loc[:, [col for col in data.columns if "CHO" in col]].values
         ins = data.loc[:, [col for col in data.columns if "insulin" in col]].values
 
-        # reshape timeseties in (n_samples, hist, 1) shape and concatenate
+        # reshape time series in (n_samples, hist, 1) shape and concatenate
         g = g.reshape(-1, g.shape[1], 1)
         cho = cho.reshape(-1, g.shape[1], 1)
         ins = ins.reshape(-1, g.shape[1], 1)

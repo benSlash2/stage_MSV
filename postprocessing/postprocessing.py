@@ -9,10 +9,11 @@ def postprocessing(results, scalers, dataset):
     2. formatting the results
     :param results:
     :param scalers:
+    :param dataset:
     :return:
     """
     results = _rescale(results, scalers)
-    results = _reshape(results, max([freq,datasets[dataset]["glucose_freq"]]))
+    results = _reshape(results, max([freq, datasets[dataset]["glucose_freq"]]))
 
     return results
 
@@ -33,11 +34,11 @@ def _rescale(results, scalers):
     return scaled_results
 
 
-def _reshape(results, freq):
+def _reshape(results, frequency):
     """
     Reshape (resample) the results into the given sampling frequency
     :param results: array of dataframes with predictions and ground truths
-    :param freq: sampling frequency
+    :param frequency: sampling frequency
     :return: reshaped results
     """
-    return [res_.resample(str(freq) + "min").mean() for res_ in results]
+    return [res_.resample(str(frequency) + "min").mean() for res_ in results]

@@ -4,10 +4,10 @@ import misc.constants as cs
 import os
 from joblib import dump, load
 
+
 class RF(Predictor):
-    def fit(self):
-        # get training data
-        x, y, t = self._str2dataset("train")
+    def __init__(self, subject, ph, params, train, valid, test):
+        super().__init__(subject, ph, params, train, valid, test)
 
         # define the model
         self.model = RandomForestRegressor(
@@ -20,6 +20,10 @@ class RF(Predictor):
             n_jobs=20,
             random_state=cs.seed
         )
+
+    def fit(self):
+        # get training data
+        x, y, t = self._str2dataset("train")
 
         # fit the model
         self.model.fit(x, y)
@@ -34,11 +38,10 @@ class RF(Predictor):
 
         return self._format_results(y_true, y_pred, t)
 
-
     def save(self, file):
         if not os.path.exists(os.path.dirname(file)):
             os.makedirs(os.path.dirname(file))
-        dump(self.model,filename=file)
+        dump(self.model, filename=file)
 
     def load(self, file):
         self.model = load(filename=file)

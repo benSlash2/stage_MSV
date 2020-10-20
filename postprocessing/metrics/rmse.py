@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def RMSE(results):
+def rmse(results):
     """
     Compute the Root-Mean-Squared Error of the predictions.
     :param results: dataframe with predictions and ground truths

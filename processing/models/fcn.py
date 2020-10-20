@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import os
@@ -17,16 +16,14 @@ class FCN(DeepTLPredictor):
                                      self.params["encoder_dropout"], self.params["decoder_channels"],
                                      self.params["decoder_dropout"], self.params["domain_adversarial"], self.n_domains)
         self.model.cuda()
+        self.loss_func = self._compute_loss_func()
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
 
     def fit(self):
         x_train, y_train, _ = self._str2dataset("train")
         x_valid, y_valid, _ = self._str2dataset("valid")
         train_ds = self._to_tensor_ds(x_train, y_train)
         valid_ds = self._to_tensor_ds(x_valid, y_valid)
-
-        self.loss_func = self._compute_loss_func()
-
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
 
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds,
             valid_ds, self.params["patience"], self.checkpoint_file)

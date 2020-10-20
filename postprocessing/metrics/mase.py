@@ -1,11 +1,12 @@
 import numpy as np
 
 
-def MASE(results, ph, freq):
+def mase(results, ph, freq):
     """
-        Compute the mean absolute scaled error, with is a the MAE noramized by the MAE of a "naïve" prediction
+        Compute the mean absolute scaled error, with is a the MAE normalized by the MAE of a "naive" prediction
         (value has not change between the time t and t+PH)
         :param results: dataframe with predictions and ground truths
+        :param ph:
         :param freq: sampling frequency in minutes
         :return: fitness
     """

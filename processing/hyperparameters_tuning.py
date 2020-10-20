@@ -1,7 +1,5 @@
 import sys
-
 import numpy as np
-
 from misc.utils import dict_cartesian_product
 
 
@@ -9,7 +7,7 @@ def compute_coarse_params_grid(params, search):
     """
     Compute a list of params based on the params boundaries and search rules.
     :param params: params dict;
-    :param search: seach dict;
+    :param search: search dict;
     :return: list of params dict;
     """
     # reformat the params
@@ -34,7 +32,7 @@ def compute_coarse_params_grid(params, search):
     # compute the cartesian product of the dict parameters
     combinations = dict_cartesian_product(params_)
 
-    params_grid = [{x: vals[i] for i, x in enumerate(params_.copy())} for vals in combinations]
+    params_grid = [{x: val[i] for i, x in enumerate(params_.copy())} for val in combinations]
 
     return params_grid
 
@@ -43,8 +41,8 @@ def compute_refined_params_grid(params, search, best_params):
     """
     Compute a list of params based on the params boundaries and search rules.
     :param params: params dict;
-    :param search: seach dict;
-    :param best_params: best hyperparam combination from coarse search
+    :param search: search dict;
+    :param best_params: best hyperparameter combination from coarse search
     :return: list of params dict
     """
     best_params_ = best_params.copy()
@@ -53,7 +51,7 @@ def compute_refined_params_grid(params, search, best_params):
             method, num_coarse, num_refined = search[key]
 
             if method == "logarithmic":
-                step = np.ceil((params[key][-1] / params[key][0]) ** (1 / (num_coarse)))
+                step = np.ceil((params[key][-1] / params[key][0]) ** (1 / num_coarse))
                 mod = [step ** i for i in (np.arange(num_refined) - num_refined // 2) / (num_refined // 2 + 1)]
                 best_params_[key] = [val * i for i in mod]
             elif method == "linear":
@@ -70,6 +68,6 @@ def compute_refined_params_grid(params, search, best_params):
     # compute the cartesian product of the dict parameters
     combinations = dict_cartesian_product(best_params_)
 
-    params_grid = [{x: vals[i] for i, x in enumerate(best_params_.copy())} for vals in combinations]
+    params_grid = [{x: val[i] for i, x in enumerate(best_params_.copy())} for val in combinations]
 
     return params_grid

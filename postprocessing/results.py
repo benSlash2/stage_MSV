@@ -9,10 +9,11 @@ from pathlib import Path
 import misc.datasets
 
 
-class ResultsDataset():
+class ResultsDataset:
     def __init__(self, model, experiment, ph, dataset, legacy=False):
         """
-        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
@@ -35,7 +36,7 @@ class ResultsDataset():
         """
         res = []
         for subject in self.subjects:
-            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, self.subject, study=study,
+            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, subject, study=study,
                                          mode=mode).compute_mean_std_results()
             if details:
                 print(self.dataset, subject, res_subject)
@@ -50,7 +51,7 @@ class ResultsDataset():
     def compute_average_params(self, study=False, mode="valid"):
         params = []
         for subject in self.subjects:
-            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset,subject, study=study,
+            res_subject = ResultsSubject(self.model, self.experiment, self.ph, self.dataset, subject, study=study,
                                          mode=mode)
             params.append(res_subject.params)
 
@@ -77,12 +78,13 @@ class ResultsDataset():
         print_latex(mean, std, label=self.model)
 
 
-class ResultsAllPatientsAllExp():
+class ResultsAllPatientsAllExp:
     def __init__(self, model, mode, experiments, ph, dataset, legacy=False):
         """
-        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
-        :param experiment: name of the experiment (e.g., "test")
+        :param experiments: names of the experiments (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
         :param legacy: used for old results without the params field in them #TODO remove
@@ -105,9 +107,9 @@ class ResultsAllPatientsAllExp():
         """
         dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode)
         Path(dir).mkdir(parents=True, exist_ok=True)
-        saveable_results = self.compute_results()
+        savable_results = self.compute_results()
         printd("Global metrics for all patients and all experiments saved at ", dir)
-        np.save(os.path.join(dir, "metrics.npy"), [self.compute_params(), saveable_results])
+        np.save(os.path.join(dir, "metrics.npy"), [self.compute_params(), savable_results])
 
     def compute_results(self, details=False):
         """
@@ -128,11 +130,10 @@ class ResultsAllPatientsAllExp():
         res_subject = ResultsSubject(self.model, exp, self.ph, self.dataset, "1", study=True, mode=self.mode)
         return res_subject.params
 
-    def to_latex(self, table="acc", model_name=None):
+    def to_latex(self, table="acc"):
         """
         Format the results into a string for the paper in LATEX
         :param table: either "acc" or "cg_ega", corresponds to the table
-        :param model_name: prefix of the string, name of the model
         :return:
         """
         mean, std = self.compute_results()
@@ -149,12 +150,13 @@ class ResultsAllPatientsAllExp():
         print_latex(mean, std, label=self.model)
 
 
-class ResultsAllExp():
+class ResultsAllExp:
     def __init__(self, model, mode, experiments, ph, dataset, subject, legacy=False):
         """
-        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
-        :param experiment: name of the experiment (e.g., "test")
+        :param experiments: names of the experiments (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
         :param legacy: used for old results without the params field in them #TODO remove
@@ -177,9 +179,9 @@ class ResultsAllExp():
         """
         dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode, "patient " + self.subject)
         Path(dir).mkdir(parents=True, exist_ok=True)
-        saveable_results = self.compute_results()
+        savable_results = self.compute_results()
         printd("Global results for patient", self.subject, " with all experiments saved at", dir)
-        np.save(os.path.join(dir, "results.npy"), [self.compute_params(), saveable_results])
+        np.save(os.path.join(dir, "results.npy"), [self.compute_params(), savable_results])
 
     def compute_results(self, details=False):
         """
@@ -202,11 +204,10 @@ class ResultsAllExp():
                                      mode=self.mode)
         return res_subject.params
 
-    def to_latex(self, table="acc", model_name=None):
+    def to_latex(self, table="acc"):
         """
         Format the results into a string for the paper in LATEX
         :param table: either "acc" or "cg_ega", corresponds to the table
-        :param model_name: prefix of the string, name of the model
         :return:
         """
         mean, std = self.compute_results()
@@ -223,10 +224,11 @@ class ResultsAllExp():
         print_latex(mean, std, label=self.model)
 
 
-class ResultsAllPatients():
+class ResultsAllPatients:
     def __init__(self, model, mode, experiment, ph, dataset, legacy=False):
         """
-        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
@@ -268,11 +270,10 @@ class ResultsAllPatients():
                                      mode=self.mode)
         return res_subject.params
 
-    def to_latex(self, table="acc", model_name=None):
+    def to_latex(self, table="acc"):
         """
         Format the results into a string for the paper in LATEX
         :param table: either "acc" or "cg_ega", corresponds to the table
-        :param model_name: prefix of the string, name of the model
         :return:
         """
         mean, std = self.compute_results()
@@ -289,10 +290,11 @@ class ResultsAllPatients():
         print_latex(mean, std, label=self.model)
 
 
-class ResultsAllSeeds():
+class ResultsAllSeeds:
     def __init__(self, model, mode, experiment, ph, dataset, subject, legacy=False):
         """
-        Object that compute all the performances of a given dataset for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given dataset for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
@@ -318,9 +320,9 @@ class ResultsAllSeeds():
         dir = os.path.join(cs.path, "study", self.dataset, self.model, self.mode, "patient " + self.subject,
                            self.experiment)
         Path(dir).mkdir(parents=True, exist_ok=True)
-        saveable_results = self.compute_results()
-        printd("Global results for patient", self.subject, "with features", self.experiment, "\n", saveable_results)
-        np.save(os.path.join(dir, "results_metrics.npy"), [self.compute_params(), saveable_results])
+        savable_results = self.compute_results()
+        printd("Global results for patient", self.subject, "with features", self.experiment, "\n", savable_results)
+        np.save(os.path.join(dir, "results_metrics.npy"), [self.compute_params(), savable_results])
 
     def compute_results(self, details=False):
         """
@@ -348,11 +350,10 @@ class ResultsAllSeeds():
                                      mode=self.mode)
         return res_subject.params
 
-    def to_latex(self, table="acc", model_name=None):
+    def to_latex(self, table="acc"):
         """
         Format the results into a string for the paper in LATEX
         :param table: either "acc" or "cg_ega", corresponds to the table
-        :param model_name: prefix of the string, name of the model
         :return:
         """
         mean, std = self.compute_results()
@@ -397,17 +398,19 @@ class ResultsDatasetTransfer(ResultsDataset):
         print_latex(mean, std, label=self.model)
 
 
-class ResultsSubject():
+class ResultsSubject:
     def __init__(self, model, experiment, ph, dataset, subject, params=None, results=None, legacy=False, study=False,
                  mode="valid"):
         """
-        Object that compute all the performances of a given subject for a given model and experiment and prediction horizon
+        Object that compute all the performances of a given subject for a given model and experiment and prediction
+        horizon
         :param model: name of the model (e.g., "base")
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
         :param subject: name of the subject (e.g., "559")
-        :param params: if params and results  are given, performances are directly compute on them, and both are saved into a file
+        :param params: if params and results  are given, performances are directly compute on them, and both are saved
+        into a file
         :param results: see params
         :param legacy: used for old results without the params field in them #TODO remove
         """
@@ -432,6 +435,9 @@ class ResultsSubject():
         """
         Load the results from previous instance of ResultsSubject that has saved the them
         :param legacy: if legacy object shall  be used
+        :param from_study
+        :param mode
+        :param transfer
         :return: (params dictionary), dataframe with ground truths and predictions
         """
         if not from_study:
@@ -475,21 +481,19 @@ class ResultsSubject():
         if not to_study:
             dir = os.path.join(cs.path, "results", self.model, self.experiment, "ph-" + str(self.ph))
             Path(dir).mkdir(parents=True, exist_ok=True)
-            saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
-            np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), [self.params, saveable_results])
+            savable_results = np.array([res.reset_index().to_numpy() for res in self.results])
+            np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), [self.params, savable_results])
         else:
             dir = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient " + self.subject,
                                self.experiment)
             Path(dir).mkdir(parents=True, exist_ok=True)
-            saveable_results = np.array([res.reset_index().to_numpy() for res in self.results])
-            np.save(os.path.join(dir, "results.npy"), [self.params, saveable_results])
-
-        # np.save(os.path.join(dir, self.dataset + "_" + self.subject + ".npy"), np.array())
+            savable_results = np.array([res.reset_index().to_numpy() for res in self.results])
+            np.save(os.path.join(dir, "results.npy"), [self.params, savable_results])
 
     def compute_raw_results(self, split_by_day=False):
         """
         Compute the raw metrics results for every split (or day, if split_by_day)
-        :param split_by_day: wether the results are computed first by day and averaged, or averaged globally
+        :param split_by_day: whether the results are computed first by day and averaged, or averaged globally
         :return: dictionary of arrays of scores for the metrics
         """
         if split_by_day:
@@ -500,16 +504,16 @@ class ResultsSubject():
         else:
             results = self.results
 
-        rmse_score = [rmse.RMSE(res_day) for res_day in results]
-        mape_score = [mape.MAPE(res_day) for res_day in results]
-        mase_score = [mase.MASE(res_day, self.ph, self.freq) for res_day in results]
+        rmse_score = [rmse.rmse(res_day) for res_day in results]
+        mape_score = [mape.mape(res_day) for res_day in results]
+        mase_score = [mase.mase(res_day, self.ph, self.freq) for res_day in results]
         tg_score = [time_lag.time_gain(res_day, self.ph, self.freq, "mse") for res_day in results]
-        cg_ega_score = np.array([cg_ega.CG_EGA(res_day, self.freq).simplified() for res_day in results])
-        cg_ega_score2 = np.array([cg_ega.CG_EGA(res_day, self.freq).reduced() for res_day in results])
-        p_ega_score = np.array([p_ega.P_EGA(res_day, self.freq).mean() for res_day in results])
-        p_ega_a_plus_b_score = [p_ega.P_EGA(res_day, self.freq).a_plus_b() for res_day in results]
-        r_ega_score = np.array([r_ega.R_EGA(res_day, self.freq).mean() for res_day in results])
-        r_ega_a_plus_b_score = [r_ega.R_EGA(res_day, self.freq).a_plus_b() for res_day in results]
+        cg_ega_score = np.array([cg_ega.CgEGA(res_day, self.freq).simplified() for res_day in results])
+        cg_ega_score2 = np.array([cg_ega.CgEGA(res_day, self.freq).reduced() for res_day in results])
+        p_ega_score = np.array([p_ega.PEga(res_day, self.freq).mean() for res_day in results])
+        p_ega_a_plus_b_score = [p_ega.PEga(res_day, self.freq).a_plus_b() for res_day in results]
+        r_ega_score = np.array([r_ega.REga(res_day, self.freq).mean() for res_day in results])
+        r_ega_a_plus_b_score = [r_ega.REga(res_day, self.freq).a_plus_b() for res_day in results]
 
         return {
             "RMSE": rmse_score,
@@ -548,7 +552,7 @@ class ResultsSubject():
     def compute_mean_std_results(self, split_by_day=False):
         """
         From the raw metrics scores, compute the mean and std
-        :param split_by_day: wether the results are computed first by day and averaged, or averaged globally
+        :param split_by_day: whether the results are computed first by day and averaged, or averaged globally
         :return: mean of dictionary of metrics, std of dictionary of metrics
         """
         raw_results = self.compute_raw_results(split_by_day=split_by_day)
@@ -564,4 +568,4 @@ class ResultsSubject():
         :param day_number: day (int) to plot
         :return: /
         """
-        cg_ega.CG_EGA(self.results[0], self.freq).plot(day_number)
+        cg_ega.CgEga(self.results[0], self.freq).plot(day_number)

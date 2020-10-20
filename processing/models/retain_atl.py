@@ -6,6 +6,7 @@ from processing.models.deep_tl_predictor import DeepTLPredictor
 import torch.nn as nn
 from processing.models.pytorch_tools.training import fit, predict, loss_init
 
+
 class RETAIN_ATL(DeepTLPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)

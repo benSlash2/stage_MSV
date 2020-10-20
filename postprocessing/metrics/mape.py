@@ -1,8 +1,10 @@
 import numpy as np
 
-def MAPE(results):
+
+def mape(results):
     """
-        Compute the mean absolute percentage error  of the predictions, with is a normalized mean absolute error, expressed in %
+        Compute the mean absolute percentage error  of the predictions, with is a normalized mean absolute error,
+        expressed in %
         :param results: dataframe with predictions and ground truths
         :return: fitness
     """

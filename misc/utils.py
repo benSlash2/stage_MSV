@@ -5,15 +5,15 @@ import time
 from pydoc import locate
 
 
-def dict_cartesian_product(dict):
+def dict_cartesian_product(dic):
     """
     From a dict, compute the cartesian product of its values.
     :param dict: dict;
     :return: array of values combinations
     """
     l = iter([])
-    for hparams in [dict]:
-        l2 = itertools.product(*hparams.values())
+    for params in [dict]:
+        l2 = itertools.product(*params.values())
         l = itertools.chain(l, l2)
     l2 = [list(elem) for elem in l]
     return l2
@@ -25,6 +25,7 @@ def timeit(method):
         :param method: function
         :return: time elapsed
     """
+
     def timed(*args, **kw):
         ts = time.time()
         result = method(*args, **kw)
@@ -34,7 +35,7 @@ def timeit(method):
             name = kw.get('log_name', method.__name__.upper())
             kw['log_time'][name] = int((te - ts) * 1000)
         else:
-            print('%r  %2.2f ms' % \
+            print('%r  %2.2f ms' %
                   (method.__name__, (te - ts) * 1000))
         return result
 
@@ -46,11 +47,11 @@ def locate_model(model_name):
 
 
 def locate_params(params_name):
-    return locate ("processing.models.params." + params_name + ".parameters")
+    return locate("processing.models.params." + params_name + ".parameters")
 
 
 def locate_search(params_name):
-    return locate ("processing.models.params." + params_name + ".search")
+    return locate("processing.models.params." + params_name + ".search")
 
 
 def printd(*msg):

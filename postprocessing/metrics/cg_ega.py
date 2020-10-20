@@ -4,18 +4,19 @@ import numpy as np
 from postprocessing.metrics.tools.cg_ega_tools import reshape_results, extract_columns_from_results
 from .tools.cg_ega_filters import *
 from .tools.cg_ega_tools import _all
-from .p_ega import P_EGA
-from .r_ega import R_EGA
+from .p_ega import PEga
+from .r_ega import REga
 from misc.constants import day_len
 
 
-class CG_EGA():
+class CgEga:
     """
-        The Continuous Glucose-Error Grid Analysis (CG-EGA) gives a measure of the clinical acceptability of the glucose predictions. It analyzes both the
-        prediction accuracy (through the P-EGA) and the predicted variation accuracy (R-EGA).
-
+        The Continuous Glucose-Error Grid Analysis (CG-EGA) gives a measure of the clinical acceptability of the glucose
+        predictions. It analyzes both the prediction accuracy (through the P-EGA) and the predicted variation accuracy
+        (R-EGA).
         The implementation has been made following "Evaluating the accuracy of continuous glucose-monitoring sensors:
-        continuous glucose-error grid analysis illustrated by TheraSense Freestyle Navigator data.", Kovatchev et al., 2004.
+        continuous glucose-error grid analysis illustrated by TheraSense Freestyle Navigator data.",
+        Kovatchev et al., 2004.
     """
     def __init__(self, results, freq):
         """
@@ -26,9 +27,8 @@ class CG_EGA():
         self.results = reshape_results(results, freq)
         self.freq = freq
         self.day_len = day_len // freq
-        self.p_ega = P_EGA(results, freq).full()
-        self.r_ega = R_EGA(results, freq).full()
-
+        self.p_ega = PEga(results, freq).full()
+        self.r_ega = REga(results, freq).full()
 
     def full(self):
         """
@@ -50,65 +50,65 @@ class CG_EGA():
         hyperglycemia = np.greater(y_true, 180).reshape(-1, 1)
 
         # apply region filter and convert to 0s and 1s
-        P_hypo = np.reshape(np.concatenate([np.reshape(p_ega[:, 0], (-1, 1)),
+        p_hypo = np.reshape(np.concatenate([np.reshape(p_ega[:, 0], (-1, 1)),
                                             np.reshape(p_ega[:, 3], (-1, 1)),
                                             np.reshape(p_ega[:, 4], (-1, 1))], axis=1).astype("int32") *
                             hypoglycemia.astype("int32"),
                             (-1, 3))
-        P_eu = np.reshape(np.concatenate([np.reshape(p_ega[:, 0], (-1, 1)),
+        p_eu = np.reshape(np.concatenate([np.reshape(p_ega[:, 0], (-1, 1)),
                                           np.reshape(p_ega[:, 1], (-1, 1)),
                                           np.reshape(p_ega[:, 2], (-1, 1))], axis=1).astype("int32") *
                           euglycemia.astype("int32"),
                           (-1, 3))
-        P_hyper = np.reshape(p_ega.astype("int32") * hyperglycemia.astype("int32"), (-1, 5))
+        p_hyper = np.reshape(p_ega.astype("int32") * hyperglycemia.astype("int32"), (-1, 5))
 
-        R_hypo = np.reshape(r_ega.astype("int32") * hypoglycemia.astype("int32"), (-1, 8))
-        R_eu = np.reshape(r_ega.astype("int32") * euglycemia.astype("int32"), (-1, 8))
-        R_hyper = np.reshape(r_ega.astype("int32") * hyperglycemia.astype("int32"), (-1, 8))
+        r_hypo = np.reshape(r_ega.astype("int32") * hypoglycemia.astype("int32"), (-1, 8))
+        r_eu = np.reshape(r_ega.astype("int32") * euglycemia.astype("int32"), (-1, 8))
+        r_hyper = np.reshape(r_ega.astype("int32") * hyperglycemia.astype("int32"), (-1, 8))
 
-        CG_EGA_hypo = np.dot(np.transpose(R_hypo), P_hypo)
-        CG_EGA_eu = np.dot(np.transpose(R_eu), P_eu)
-        CG_EGA_hyper = np.dot(np.transpose(R_hyper), P_hyper)
+        cg_ega_hypo = np.dot(np.transpose(r_hypo), p_hypo)
+        cg_ega_eu = np.dot(np.transpose(r_eu), p_eu)
+        cg_ega_hyper = np.dot(np.transpose(r_hyper), p_hyper)
 
-        return CG_EGA_hypo, CG_EGA_eu, CG_EGA_hyper
+        return cg_ega_hypo, cg_ega_eu, cg_ega_hyper
 
     def simplified(self, count=False):
         """
-            Simplifies the full CG-EGA into Accurate Prediction (AP), Benign Prediction (BE), and Erroneous Prediction (EP)
-            rates for every glycemia regions.
-
+            Simplifies the full CG-EGA into Accurate Prediction (AP), Benign Prediction (BE),
+            and Erroneous Prediction (EP) rates for every glycemia regions.
             :param count: if False, the results, for every region, will be expressed as a ratio
-
             :return: AP rate in hypoglycemia, BE rate in hypoglycemia, EP rate in hypoglycemia,
                      AP rate in euglycemia, BE rate in euglycemia, EP rate in euglycemia,
                      AP rate in hyperglycemia, BE rate in hyperglycemia, EP rate in hyperglycemia
         """
 
-        CG_EGA_hypo, CG_EGA_eu, CG_EGA_hyper = self.full()
+        cg_ega_hypo, cg_ega_eu, cg_ega_hyper = self.full()
 
-        AP_hypo = np.sum(CG_EGA_hypo * filter_AP_hypo)
-        BE_hypo = np.sum(CG_EGA_hypo * filter_BE_hypo)
-        EP_hypo = np.sum(CG_EGA_hypo * filter_EP_hypo)
+        ap_hypo = np.sum(cg_ega_hypo * filter_AP_hypo)
+        be_hypo = np.sum(cg_ega_hypo * filter_BE_hypo)
+        ep_hypo = np.sum(cg_ega_hypo * filter_EP_hypo)
 
-        AP_eu = np.sum(CG_EGA_eu * filter_AP_eu)
-        BE_eu = np.sum(CG_EGA_eu * filter_BE_eu)
-        EP_eu = np.sum(CG_EGA_eu * filter_EP_eu)
+        ap_eu = np.sum(cg_ega_eu * filter_AP_eu)
+        be_eu = np.sum(cg_ega_eu * filter_BE_eu)
+        ep_eu = np.sum(cg_ega_eu * filter_EP_eu)
 
-        AP_hyper = np.sum(CG_EGA_hyper * filter_AP_hyper)
-        BE_hyper = np.sum(CG_EGA_hyper * filter_BE_hyper)
-        EP_hyper = np.sum(CG_EGA_hyper * filter_EP_hyper)
+        ap_hyper = np.sum(cg_ega_hyper * filter_AP_hyper)
+        be_hyper = np.sum(cg_ega_hyper * filter_BE_hyper)
+        ep_hyper = np.sum(cg_ega_hyper * filter_EP_hyper)
 
         if not count:
-            sum_hypo = (AP_hypo + BE_hypo + EP_hypo)
-            sum_eu = (AP_eu + BE_eu + EP_eu)
-            sum_hyper = (AP_hyper + BE_hyper + EP_hyper)
+            sum_hypo = (ap_hypo + be_hypo + ep_hypo)
+            sum_eu = (ap_eu + be_eu + ep_eu)
+            sum_hyper = (ap_hyper + be_hyper + ep_hyper)
 
+            [ap_hypo, be_hypo, ep_hypo] = [ap_hypo / sum_hypo, be_hypo / sum_hypo, ep_hypo / sum_hypo] \
+                if not sum_hypo == 0 else [np.nan, np.nan, np.nan]
+            [ap_eu, be_eu, ep_eu] = [ap_eu / sum_eu, be_eu / sum_eu, ep_eu / sum_eu] if not sum_eu == 0 \
+                else [np.nan, np.nan, np.nan]
+            [ap_hyper, be_hyper, ep_hyper] = [ap_hyper / sum_hyper, be_hyper / sum_hyper, ep_hyper / sum_hyper] \
+                if not sum_hyper == 0 else [np.nan, np.nan, np.nan]
 
-            [AP_hypo, BE_hypo, EP_hypo] = [AP_hypo / sum_hypo, BE_hypo / sum_hypo, EP_hypo / sum_hypo] if not sum_hypo == 0 else [np.nan, np.nan, np.nan]
-            [AP_eu, BE_eu, EP_eu] = [AP_eu / sum_eu, BE_eu / sum_eu, EP_eu / sum_eu] if not sum_eu == 0 else [np.nan, np.nan, np.nan]
-            [AP_hyper, BE_hyper, EP_hyper] = [AP_hyper / sum_hyper, BE_hyper / sum_hyper, EP_hyper / sum_hyper] if not sum_hyper == 0 else [np.nan, np.nan, np.nan]
-
-        return AP_hypo, BE_hypo, EP_hypo, AP_eu, BE_eu, EP_eu, AP_hyper, BE_hyper, EP_hyper
+        return ap_hypo, be_hypo, ep_hypo, ap_eu, be_eu, ep_eu, ap_hyper, be_hyper, ep_hyper
 
     def reduced(self):
         """
@@ -116,10 +116,10 @@ class CG_EGA():
             :return: overall AP rate, overall BE rate, overall EP rate
         """
 
-        AP_hypo, BE_hypo, EP_hypo, AP_eu, BE_eu, EP_eu, AP_hyper, BE_hyper, EP_hyper = self.simplified(count=True)
-        sum = (AP_hypo + BE_hypo + EP_hypo + AP_eu + BE_eu + EP_eu + AP_hyper + BE_hyper + EP_hyper)
-        return (AP_hypo + AP_eu + AP_hyper) / sum, (BE_hypo + BE_eu + BE_hyper) / sum, (
-                EP_hypo + EP_eu + EP_hyper) / sum
+        ap_hypo, be_hypo, ep_hypo, ap_eu, be_eu, ep_eu, ap_hyper, be_hyper, ep_hyper = self.simplified(count=True)
+        full_sum = (ap_hypo + be_hypo + ep_hypo + ap_eu + be_eu + ep_eu + ap_hyper + be_hyper + ep_hyper)
+        return (ap_hypo + ap_eu + ap_hyper) / full_sum, (be_hypo + be_eu + be_hyper) / full_sum, (
+                ep_hypo + ep_eu + ep_hyper) / full_sum
 
     def per_sample(self):
         """

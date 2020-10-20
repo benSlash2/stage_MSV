@@ -1,13 +1,13 @@
 import numpy as np
 from misc.utils import printd
-from postprocessing.metrics.rmse import RMSE
+from postprocessing.metrics.rmse import rmse
 from processing.hyperparameters_tuning import compute_coarse_params_grid, compute_refined_params_grid
 
 
 def make_predictions_tl(subject, model_class, params, ph, train, valid, test, weights_file=None, eval_mode="valid",
                         fit=True, save_model_file=None):
     """
-    Identical to make_predictions but for model that are transfered (use of weight file
+    Identical to make_predictions but for model that are transferred (use of weight file
     """
     results = []
     for i, (train_i, valid_i, test_i) in enumerate(zip(train, valid, test)):
@@ -31,7 +31,7 @@ def make_predictions_tl(subject, model_class, params, ph, train, valid, test, we
 
 def make_predictions(subject, model_class, params, ph, train, valid, test, mode="valid", save_model_file=None):
     """
-    For every train, valid, test fold, fit the given model with params at prediciton horizon on the training set,
+    For every train, valid, test fold, fit the given model with params at prediction horizon on the training set,
     and make predictions on either the validation or testing set
     :param subject: name of subject
     :param model_class: name of model
@@ -52,8 +52,8 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
         attr = model.integrated_gradients(dataset=mode, file=model.checkpoint_file)
         results.append(res)
 
-        if save_model_file is not None:
-            model.save(save_model_file + "_" + str(i) + ".pt")
+        # if save_model_file is not None:
+        #     model.save(save_model_file + "_" + str(i) + ".pt")
 
         # if mode == "valid":
         #     break
@@ -62,11 +62,12 @@ def make_predictions(subject, model_class, params, ph, train, valid, test, mode=
 
 def find_best_hyperparameters(subject, model_class, params, search, ph, train, valid, test):
     coarse_params_grid = compute_coarse_params_grid(params, search)
+
     def params_search(grid):
         results = []
         for params_tmp in grid:
-            res = make_predictions(subject,model_class,params_tmp, ph, train, valid, test, mode="valid")
-            results.append([RMSE(res_) for res_ in res])
+            res = make_predictions(subject, model_class, params_tmp, ph, train, valid, test, mode="valid")
+            results.append([rmse(res_) for res_ in res])
             printd(params_tmp, results[-1])
         return grid[np.argmin(np.mean(np.transpose(results), axis=0))]
 
