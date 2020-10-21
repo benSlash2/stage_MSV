@@ -15,6 +15,12 @@ class DeepPredictor(Predictor):
         self.checkpoint_file = self._compute_checkpoint_file(self.__class__.__name__)
         self.input_shape = self._compute_input_shape()
 
+    def fit(self):
+        pass
+
+    def predict(self, dataset):
+        pass
+
     def load(self, file_name):
         self.model.load_state_dict(torch.load(file_name))
         torch.save(self.model.state_dict(), self.checkpoint_file)

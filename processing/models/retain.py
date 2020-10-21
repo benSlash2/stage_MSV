@@ -4,13 +4,15 @@ from processing.models.deep_predictor import DeepPredictor
 import torch.nn as nn
 from processing.models.pytorch_tools.training import fit, predict
 
+
 class RETAIN(DeepPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
 
-        self.model = self.RETAIN_Module(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
-                                        self.params["n_layers_rnn"], self.params["emb_dropout"], self.params["ctx_dropout"],
-                                        self.params["reverse_time"], self.params["bidirectional"])
+        self.model = self.RetainModule(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
+                                       self.params["n_layers_rnn"], self.params["emb_dropout"],
+                                       self.params["ctx_dropout"], self.params["reverse_time"],
+                                       self.params["bidirectional"])
 
         self.model_parameters = [
             {'params': self.model.embeddings.parameters()},
@@ -22,16 +24,14 @@ class RETAIN(DeepPredictor):
         ]
 
         self.model.cuda()
+        self.loss_func = nn.MSELoss()
+        self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
     def fit(self):
         x_train, y_train, t_train = self._str2dataset("train")
         x_valid, y_valid, t_valid = self._str2dataset("valid")
         train_ds = self._to_tensor_ds(x_train, y_train)
         valid_ds = self._to_tensor_ds(x_valid, y_valid)
-
-        self.loss_func = nn.MSELoss()
-
-        self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
             self.params["patience"], self.checkpoint_file)
@@ -76,34 +76,36 @@ class RETAIN(DeepPredictor):
         alpha, beta = self.model.compute_alpha_beta(emb)
         c = self.model.compute_c(emb, alpha, beta)
 
-        c = c.detach().cpu().numpy().reshape(c.shape[0],-1)
+        c = c.detach().cpu().numpy().reshape(c.shape[0], -1)
 
         return [c, y]
 
-    class RETAIN_Module(nn.Module):
+    class RetainModule(nn.Module):
 
-        def __init__(self, n_in, n_features_emb, n_hidden_rnn, n_layers_rnn, emb_dropout, ctx_dropout, reverse_time=True, bidirectional=False):
+        def __init__(self, n_in, n_features_emb, n_hidden_rnn, n_layers_rnn, emb_dropout, ctx_dropout,
+                     reverse_time=True, bidirectional=False):
             super().__init__()
 
             self.embeddings = nn.Linear(n_in, n_features_emb, bias=False)
-            self.rnn_alpha = nn.LSTM(n_features_emb,n_hidden_rnn,n_layers_rnn,batch_first=True,bidirectional=bidirectional)
-            self.rnn_beta = nn.LSTM(n_features_emb,n_hidden_rnn,n_layers_rnn,batch_first=True,bidirectional=bidirectional)
+            self.rnn_alpha = nn.LSTM(n_features_emb, n_hidden_rnn, n_layers_rnn, batch_first=True,
+                                     bidirectional=bidirectional)
+            self.rnn_beta = nn.LSTM(n_features_emb, n_hidden_rnn, n_layers_rnn, batch_first=True,
+                                    bidirectional=bidirectional)
             self.reverse_time = reverse_time
             self.emb_dropout = nn.Dropout(emb_dropout)
             self.ctx_dropout = nn.Dropout(ctx_dropout)
 
             self.alpha = nn.Sequential(
-                nn.Linear(n_hidden_rnn *(1 + int(bidirectional)),1,bias=True),
+                nn.Linear(n_hidden_rnn * (1 + int(bidirectional)), 1, bias=True),
                 nn.Softmax(dim=1)
             )
 
             self.beta = nn.Sequential(
-                nn.Linear(n_hidden_rnn *(1 + int(bidirectional)), n_features_emb, bias=True),
+                nn.Linear(n_hidden_rnn * (1 + int(bidirectional)), n_features_emb, bias=True),
                 nn.Tanh()
             )
 
             self.output = nn.Linear(n_features_emb, 1, bias=True)
-
 
         def forward(self, xb):
             emb = self.compute_embeddings(xb)
@@ -123,6 +125,3 @@ class RETAIN(DeepPredictor):
 
         def compute_c(self, emb, alpha, beta):
             return self.ctx_dropout((alpha * beta * emb).sum(dim=1))
-
-
-

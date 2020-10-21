@@ -8,14 +8,14 @@ from pydoc import locate
 def dict_cartesian_product(dic):
     """
     From a dict, compute the cartesian product of its values.
-    :param dict: dict;
+    :param dic: dict;
     :return: array of values combinations
     """
-    l = iter([])
-    for params in [dict]:
+    l1 = iter([])
+    for params in [dic]:
         l2 = itertools.product(*params.values())
-        l = itertools.chain(l, l2)
-    l2 = [list(elem) for elem in l]
+        l1 = itertools.chain(l1, l2)
+    l2 = [list(elem) for elem in l1]
     return l2
 
 
@@ -43,7 +43,12 @@ def timeit(method):
 
 
 def locate_model(model_name):
-    return locate("processing.models." + model_name + "." + model_name.upper())
+    if "_" not in model_name:
+        class_name = model_name.upper()
+    else:
+        class_name = "".join(word[0].upper() + word[1:] for word in model_name.split('_'))
+
+    return locate("processing.models." + model_name + "." + class_name)
 
 
 def locate_params(params_name):

@@ -1,19 +1,19 @@
 from .pytorch_tools.gradient_reversal import RevGrad
 import torch
 import os
-from processing.models.deep_tl_predictor import DeepTLPredictor
+from processing.models.deep_tl_predictor import DeepTlPredictor
 import numpy as np
 import torch.nn as nn
 from .pytorch_tools.training import fit, predict
 from captum.attr import IntegratedGradients
 
 
-class LSTM(DeepTLPredictor):
+class LSTM(DeepTlPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
 
-        self.model = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
-                                      self.params["dropout_layer"], self.params["domain_adversarial"], self.n_domains)
+        self.model = self.LstmModule(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
+                                     self.params["dropout_layer"], self.params["domain_adversarial"], self.n_domains)
         self.model.cuda()
         self.loss_func = self._compute_loss_func()
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
@@ -48,8 +48,8 @@ class LSTM(DeepTLPredictor):
         return results
 
     def save(self, save_file, clear=True):
-        no_da_lstm = self.LSTM_Module(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
-                                      self.params["dropout_layer"], False, 0)
+        no_da_lstm = self.LstmModule(self.input_shape, self.params["hidden"], self.params["dropout_weights"],
+                                     self.params["dropout_layer"], False, 0)
         self.model.load_state_dict(torch.load(self.checkpoint_file))
         no_da_lstm.encoder.load_state_dict(self.model.encoder.state_dict())
         no_da_lstm.regressor.load_state_dict(self.model.regressor.state_dict())
@@ -98,7 +98,7 @@ class LSTM(DeepTLPredictor):
         attr = np.concatenate(attr, axis=0)
         return attr
 
-    class LSTM_Module(nn.Module):
+    class LstmModule(nn.Module):
 
         def __init__(self, n_in, neurons, dropout_weights, dropout_layer, domain_adversarial=False, n_domains=1):
             super().__init__()

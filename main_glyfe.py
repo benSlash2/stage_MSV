@@ -6,8 +6,6 @@ import argparse
 import time
 from os.path import join
 import torch
-import numpy as np
-from pydoc import locate
 import misc.constants as cs
 from misc.utils import printd
 from processing.cross_validation import make_predictions, find_best_hyperparameters
@@ -15,7 +13,7 @@ from misc.utils import locate_params, locate_model, locate_search
 import os
 torch.manual_seed(0)
 """ This is the source code the benchmark GLYFE for glucose prediction in diabetes.
-    For more infos on how to use it, go to its Github repository at: https://github.com/dotXem/GLYFE """
+    For more info on how to use it, go to its Github repository at: https://github.com/dotXem/GLYFE """
 
 
 def main(dataset, subject, model, params, exp, mode, log, ph, plot, save=False):
@@ -45,7 +43,8 @@ def main(dataset, subject, model, params, exp, mode, log, ph, plot, save=False):
     else:
         file = None
 
-    raw_results = make_predictions(subject, model_class, params, ph_f, train, valid, test, mode=mode, save_model_file=file)
+    raw_results = make_predictions(subject, model_class, params, ph_f, train, valid, test, mode=mode,
+                                   save_model_file=file)
     """ POST-PROCESSING """
     raw_results = postprocessing(raw_results, scalers, dataset)
 
@@ -63,7 +62,8 @@ if __name__ == "__main__":
             --dataset: which dataset to use, should be referenced in misc/datasets.py;
             --subject: which subject to use, part of the dataset, use the spelling in misc/datasets.py;
             --model: model on which the benchmark will be run (e.g., "svr"); need to be lowercase; 
-            --params: parameters of the model, usually has the same name as the model (e.g., "svr"); need to be lowercase; 
+            --params: parameters of the model, usually has the same name as the model (e.g., "svr"); 
+            need to be lowercase; 
             --ph: the prediction horizon of the models; default 30 minutes;
             --exp: experimental folder in which the data will be stored, inside the results directory;
             --mode: specify is the model is tested on the validation "valid" set or testing "test" set ;
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
         Example:
             python main_tl.py --dataset=ohio --subject=559 --model=base --params=base --ph=30 
-                        --exp=myexp --mode=valid --plot=1 --log=mylog
+                        --exp=my_exp --mode=valid --plot=1 --log=my_log
     """
 
     """ ARGUMENTS HANDLER """

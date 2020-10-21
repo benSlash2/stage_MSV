@@ -8,7 +8,7 @@ if __name__ == "__main__":
     parser.add_argument("--tl_mode", type=str)
     parser.add_argument("--source_dataset", type=str)
     parser.add_argument("--target_dataset", type=str)
-    parser.add_argument("--target_subject",type=str)
+    parser.add_argument("--target_subject", type=str)
     parser.add_argument("--model", type=str)
     parser.add_argument("--params", type=str)
     parser.add_argument("--params_ft", type=str)

@@ -10,7 +10,7 @@ import copy
 
 class EarlyStopping:
     """Early stops the training_old if validation loss doesn't improve after a given patience."""
-    def __init__(self, patience=7, save_n_epochs=10, path=os.path.join(path,"checkpoints.pt"), verbose=False):
+    def __init__(self, patience=7, save_n_epochs=10, path_=os.path.join(path, "checkpoints.pt"), verbose=False):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -24,7 +24,7 @@ class EarlyStopping:
         self.best_score = None
         self.early_stop = False
         self.val_loss_min = np.Inf
-        self.path = path
+        self.path = path_
         self.save_n_epochs = save_n_epochs
 
     def __call__(self, val_loss, model, epoch):

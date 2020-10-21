@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 import os
-from processing.models.deep_tl_predictor import DeepTLPredictor
-from processing.models.pytorch_tools.fcn_creation import FCN_Encoder_Module, FCN_Regressor_Module, \
-    FCN_Domain_Classifier_Module, _compute_decoder_kernel_size
+from processing.models.deep_tl_predictor import DeepTlPredictor
+from processing.models.pytorch_tools.fcn_creation import FcnEncoderModule, FcnRegressorModule, \
+    FcnDomainClassifierModule, _compute_decoder_kernel_size
 from .pytorch_tools.training import fit, predict
 
 
-class FCN(DeepTLPredictor):
+class FCN(DeepTlPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
 
@@ -76,24 +76,21 @@ class FCN(DeepTLPredictor):
             decoder_input_dims = [encoder_channels[-1]]
             decoder_kernel_sizes = [_compute_decoder_kernel_size(encoder_kernel_sizes, history_length)]
 
-            self.encoder = FCN_Encoder_Module(n_in, encoder_channels, encoder_kernel_sizes, encoder_dropout)
-            self.regressor = FCN_Regressor_Module(decoder_input_dims, decoder_channels, decoder_kernel_sizes,
-                                                  decoder_dropout)
+            self.encoder = FcnEncoderModule(n_in, encoder_channels, encoder_kernel_sizes, encoder_dropout)
+            self.regressor = FcnRegressorModule(decoder_input_dims, decoder_channels, decoder_kernel_sizes,
+                                                decoder_dropout)
 
             if domain_adversarial:
-                self.domain_classifier = FCN_Domain_Classifier_Module(decoder_input_dims, decoder_channels,
-                                                                      decoder_kernel_sizes, decoder_dropout, n_domains)
+                self.domain_classifier = FcnDomainClassifierModule(decoder_input_dims, decoder_channels,
+                                                                   decoder_kernel_sizes, decoder_dropout, n_domains)
             else:
                 self.domain_classifier = None
 
-        def forward(self, input):
-            features = self.encoder(input)
+        def forward(self, input_):
+            features = self.encoder(input_)
             prediction = self.regressor(features)
             if self.domain_classifier is not None:
                 domain = self.domain_classifier(features)
                 return prediction.squeeze(), domain.squeeze()
             else:
                 return prediction.squeeze()
-
-
-

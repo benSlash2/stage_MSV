@@ -4,15 +4,17 @@ from sklearn.ensemble import GradientBoostingRegressor
 import misc.constants as cs
 import os
 from joblib import dump, load
+from sklearn.utils import *
+from sklearn.tree._tree import *
+from sklearn.base import *
+from sklearn.model_selection._split import *
 
 
 class GBM(Predictor):
-    def fit(self):
+    def __init__(self, subject, ph, params, train, valid, test):
+        super().__init__(subject, ph, params, train, valid, test)
         x_train, y_train, _ = self._str2dataset("train")
         x_valid, y_valid, _ = self._str2dataset("valid")
-        x = np.r_[x_train, x_valid]
-        y = np.r_[y_train, y_valid]
-
         # define the model
         self.model = GradientBoostingRegressorCustom(
             n_estimators=self.params["n_estimators"],
@@ -26,6 +28,12 @@ class GBM(Predictor):
             random_state=cs.seed,
             # verbose=1,
         )
+
+    def fit(self):
+        x_train, y_train, _ = self._str2dataset("train")
+        x_valid, y_valid, _ = self._str2dataset("valid")
+        x = np.r_[x_train, x_valid]
+        y = np.r_[y_train, y_valid]
 
         # fit the model
         self.model.fit(x, y)
@@ -62,12 +70,6 @@ class GBM(Predictor):
         return feature_importances
 
 
-from sklearn.utils import *
-from sklearn.tree._tree import *
-from sklearn.base import *
-from sklearn.model_selection._split import *
-
-
 class GradientBoostingRegressorCustom(GradientBoostingRegressor):
     """
         This class implements a custom variant of the sklearn GradientBoostingRegressor class.
@@ -98,14 +100,14 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
             )
     """
 
-    def fit(self, X, y, sample_weight=None, monitor=None):
+    def fit(self, x, y, sample_weight=None, monitor=None):
         """Fit the gradient boosting model.
 
         Parameters
         ----------
-        X : {array-like, sparse matrix}, shape (n_samples, n_features)
+        x : {array-like, sparse matrix}, shape (n_samples, n_features)
             The input samples. Internally, it will be converted to
-            ``dtype=np.float32`` and if a sparse matrix is provided
+            ``d type=np.float32`` and if a sparse matrix is provided
             to a sparse ``csr_matrix``.
 
         y : array-like, shape (n_samples,)
@@ -133,15 +135,15 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
         -------
         self : object
         """
-        # if not warmstart - clear the estimator state
+        # if not warm start - clear the estimator state
         if not self.warm_start:
             self._clear_state()
 
         # Check input
-        # Since check_array converts both X and y to the same dtype, but the
+        # Since check_array converts both X and y to the same d type, but the
         # trees use different types for X and y, checking them separately.
-        X = check_array(X, accept_sparse=['csr', 'csc', 'coo'], dtype=DTYPE)
-        n_samples, self.n_features_ = X.shape
+        x = check_array(x, accept_sparse=['csr', 'csc', 'coo'], dtype=DTYPE)
+        n_samples, self.n_features_ = x.shape
 
         sample_weight_is_none = sample_weight is None
         if sample_weight_is_none:
@@ -150,7 +152,7 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
             sample_weight = column_or_1d(sample_weight, warn=True)
             sample_weight_is_none = False
 
-        check_consistent_length(X, y, sample_weight)
+        check_consistent_length(x, y, sample_weight)
 
         y = check_array(y, accept_sparse='csc', ensure_2d=False, dtype=None)
         y = column_or_1d(y, warn=True)
@@ -158,8 +160,8 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
 
         if self.n_iter_no_change is not None:
             stratify = y if is_classifier(self) else None
-            X, X_val, y, y_val, sample_weight, sample_weight_val = (
-                train_test_split(X, y, sample_weight,
+            x, x_val, y, y_val, sample_weight, sample_weight_val = (
+                train_test_split(x, y, sample_weight,
                                  random_state=self.random_state,
                                  test_size=self.validation_fraction,
                                  stratify=stratify,
@@ -178,7 +180,7 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
                         'seed.'
                     )
         else:
-            X_val = y_val = sample_weight_val = None
+            x_val = y_val = sample_weight_val = None
 
         self._check_params()
 
@@ -188,29 +190,29 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
 
             # fit initial model and initialize raw predictions
             if self.init_ == 'zero':
-                raw_predictions = np.zeros(shape=(X.shape[0], self.loss_.K),
+                raw_predictions = np.zeros(shape=(x.shape[0], self.loss_.K),
                                            dtype=np.float64)
             else:
                 # XXX clean this once we have a support_sample_weight tag
                 if sample_weight_is_none:
-                    self.init_.fit(X, y)
+                    self.init_.fit(x, y)
                 else:
                     msg = ("The initial estimator {} does not support sample "
                            "weights.".format(self.init_.__class__.__name__))
                     try:
-                        self.init_.fit(X, y, sample_weight=sample_weight)
+                        self.init_.fit(x, y, sample_weight=sample_weight)
                     except TypeError:  # regular estimator without SW support
                         raise ValueError(msg)
                     except ValueError as e:
                         if "pass parameters to specific steps of " \
                            "your pipeline using the " \
-                           "stepname__parameter" in str(e):  # pipeline
+                           "step name__parameter" in str(e):  # pipeline
                             raise ValueError(msg) from e
                         else:  # regular estimator whose input checking failed
                             raise
 
                 raw_predictions = \
-                    self.loss_.get_init_raw_predictions(X, self.init_)
+                    self.loss_.get_init_raw_predictions(x, self.init_)
 
             begin_at_stage = 0
 
@@ -230,18 +232,18 @@ class GradientBoostingRegressorCustom(GradientBoostingRegressor):
             # The requirements of _decision_function (called in two lines
             # below) are more constrained than fit. It accepts only CSR
             # matrices.
-            X = check_array(X, dtype=DTYPE, order="C", accept_sparse='csr')
-            raw_predictions = self._raw_predict(X)
+            x = check_array(x, dtype=DTYPE, order="C", accept_sparse='csr')
+            raw_predictions = self._raw_predict(x)
             self._resize_state()
 
-        X_idx_sorted = None
+        x_idx_sorted = None
 
         # fit the boosting stages
         n_stages = self._fit_stages(
-            X, y, raw_predictions, sample_weight, self._rng, X_val, y_val,
-            sample_weight_val, begin_at_stage, monitor, X_idx_sorted)
+            x, y, raw_predictions, sample_weight, self._rng, x_val, y_val,
+            sample_weight_val, begin_at_stage, monitor, x_idx_sorted)
 
-        # change shape of arrays after fit (early-stopping or additional ests)
+        # change shape of arrays after fit (early-stopping or additional tests)
         if n_stages != self.estimators_.shape[0]:
             self.estimators_ = self.estimators_[:n_stages]
             self.train_score_ = self.train_score_[:n_stages]

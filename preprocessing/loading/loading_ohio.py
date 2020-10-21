@@ -1,6 +1,6 @@
 import misc.constants as cs
 import os
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as Et
 import pandas as pd
 
 
@@ -13,7 +13,7 @@ def load_ohio(dataset, subject):
     """
     train_path, test_path = _compute_file_names(dataset, subject)
 
-    [train_xml, test_xml] = [ET.parse(set).getroot() for set in [train_path, test_path]]
+    [train_xml, test_xml] = [Et.parse(set_).getroot() for set_ in [train_path, test_path]]
 
     [train, test] = [_extract_data_from_xml(xml) for xml in [train_xml, test_xml]]
 
@@ -47,10 +47,10 @@ def _extract_data_from_xml(xml):
     :return: dataframe
     """
     glucose_df = _get_glucose_from_xml(xml)
-    CHO_df = _get_CHO_from_xml(xml)
+    cho_df = _get_cho_from_xml(xml)
     insulin_df = _get_insulin_from_xml(xml)
 
-    df = pd.merge(glucose_df, CHO_df, how="outer", on="datetime")
+    df = pd.merge(glucose_df, cho_df, how="outer", on="datetime")
     df = pd.merge(df, insulin_df, how="outer", on="datetime")
     df = df.sort_values("datetime")
 
@@ -78,20 +78,20 @@ def _iter_fields(etree, field_index):
         yield list(event.attrib.values())
 
 
-def _get_CHO_from_xml(xml):
+def _get_cho_from_xml(xml):
     """
     Extract CHO values from xml
     :param xml:
     :return: CHO dataframe
     """
     labels = _get_field_labels(xml, field_index=5)
-    CHO = list(_iter_fields(xml, field_index=5))
-    CHO_df = pd.DataFrame(data=CHO, columns=labels)
-    CHO_df.drop("type", axis=1, inplace=True)
-    CHO_df["ts"] = pd.to_datetime(CHO_df["ts"], format="%d-%m-%Y %H:%M:%S")
-    CHO_df["carbs"] = CHO_df["carbs"].astype("float")
-    CHO_df.rename(columns={'ts': 'datetime', 'carbs': 'CHO'}, inplace=True)
-    return CHO_df
+    cho = list(_iter_fields(xml, field_index=5))
+    cho_df = pd.DataFrame(data=cho, columns=labels)
+    cho_df.drop("type", axis=1, inplace=True)
+    cho_df["ts"] = pd.to_datetime(cho_df["ts"], format="%d-%m-%Y %H:%M:%S")
+    cho_df["carbs"] = cho_df["carbs"].astype("float")
+    cho_df.rename(columns={'ts': 'datetime', 'carbs': 'CHO'}, inplace=True)
+    return cho_df
 
 
 def _get_insulin_from_xml(xml):

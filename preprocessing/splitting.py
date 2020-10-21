@@ -3,10 +3,11 @@ import pandas as pd
 import sklearn.model_selection as sk_model_selection
 import misc.constants as cs
 
+
 def split(data, day_len, test_n_days, cv_factor):
     """
-    Split samples into training_old, validation, and testing days. Testing days are the last test_n_days days, and training_old
-    and validation sets are created by permuting of splits according to the cv_factor.
+    Split samples into training_old, validation, and testing days. Testing days are the last test_n_days days,
+    and training_old and validation sets are created by permuting of splits according to the cv_factor.
     :param data: dataframe of samples
     :param day_len: length of day in freq minutes
     :param test_n_days: number of testing days
@@ -28,9 +29,8 @@ def split(data, day_len, test_n_days, cv_factor):
 
     train, valid = [], []
     for train_idx, valid_idx in kf.split(days):
-        def get_whole_day(data, i):
-            return data[i * day_len:(i + 1) * day_len]
-
+        def get_whole_day(data_, i):
+            return data_[i * day_len:(i + 1) * day_len]
         train.append(pd.concat([get_whole_day(train_valid, i) for i in train_idx], axis=0, ignore_index=True))
         valid.append(pd.concat([get_whole_day(train_valid, i) for i in valid_idx], axis=0, ignore_index=True))
 

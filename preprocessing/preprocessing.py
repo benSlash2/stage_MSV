@@ -1,20 +1,20 @@
 import pandas as pd
-from .cleaning.unit_scaling import scaling_T1DMS
+from .cleaning.unit_scaling import scaling_t1dms
 from misc import constants as cs
 from preprocessing.cleaning.nans_removal import remove_nans
-from preprocessing.cleaning.nans_filling import fill_nans, fill_nans_idiab
+from preprocessing.cleaning.nans_filling import fill_nans
 from preprocessing.loading.loading_ohio import load_ohio
 from preprocessing.loading.loading_t1dms import load_t1dms
 from preprocessing.loading.loading_idiab import load_idiab
-from preprocessing.data_augmentation.physiological_features import AOB, CPB, IOB
+from preprocessing.data_augmentation.physiological_features import aob, cpb, iob
 import misc.datasets
 from misc.utils import printd
-from preprocessing.resampling import resample, resample_idiab
-from preprocessing.samples_creation import create_samples, create_samples_idiab, create_samples_idiab_study
+from preprocessing.resampling import resample
+from preprocessing.samples_creation import create_samples
 from preprocessing.splitting import split
 from preprocessing.standardization import standardize
 from .cleaning.last_day_removal import remove_last_day
-from .cleaning.anomalies_removal import remove_anomalies, remove_anomalies_idiab
+from .cleaning.anomalies_removal import remove_anomalies
 
 
 def preprocessing_ohio(dataset, subject, ph, hist, day_len, n_days_test):
@@ -29,6 +29,7 @@ def preprocessing_ohio(dataset, subject, ph, hist, day_len, n_days_test):
     :param ph: prediction horizon, e.g. 30
     :param hist: history length, e.g. 60
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
+    :param n_days_test:
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
     data = load_ohio(dataset, subject)
@@ -36,7 +37,7 @@ def preprocessing_ohio(dataset, subject, ph, hist, day_len, n_days_test):
     data = create_samples(data, ph, hist, day_len)
     data = fill_nans(data, day_len, n_days_test)
     train, valid, test = split(data, day_len, n_days_test, cs.cv)
-    [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
+    [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
     train, valid, test, scalers = standardize(train, valid, test)
     print(test[0].shape)
     return train, valid, test, scalers
@@ -52,10 +53,11 @@ def preprocessing_t1dms(dataset, subject, ph, hist, day_len, n_days_test):
     :param ph: prediction horizon, e.g. 30
     :param hist: history length, e.g. 60
     :param day_len: length of a day normalized by sampling frequency, e.g. 1440 (1440/1)
+    :param n_days_test:
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
     data = load_t1dms(dataset, subject, day_len)
-    data = scaling_T1DMS(data)
+    data = scaling_t1dms(data)
     data = resample(data, cs.freq)
     data = create_samples(data, ph, hist, day_len)
     train, valid, test = split(data, day_len, n_days_test, cs.cv)
@@ -78,15 +80,15 @@ def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
     data = load_idiab(dataset, subject)
-    data = remove_anomalies_idiab(data)
-    data = resample_idiab(data, cs.freq)
+    data = remove_anomalies(data)
+    data = resample(data, cs.freq)
     data = remove_last_day(data)
-    data["CPB"] = CPB(data, cs.C_bio, cs.t_max)
-    data["IOB"] = IOB(data, cs.K_DIA)
-    data["AOB"] = AOB(data, cs.k_s)
-    data = create_samples_idiab_study(data, ph, hist, day_len)
+    data["CPB"] = cpb(data, cs.C_bio, cs.t_max)
+    data["IOB"] = iob(data, cs.K_DIA)
+    data["AOB"] = aob(data, cs.k_s)
+    data = create_samples(data, ph, hist, day_len)
     n_days_test = misc.datasets.datasets[dataset]["n_days_test"]
-    data = fill_nans_idiab(data, day_len, n_days_test)
+    data = fill_nans(data, day_len, n_days_test)
     return data
 
 
@@ -100,7 +102,7 @@ def preprocessing_idiab_select(data, dataset, day_len, features):
                 break
 
     train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
-    [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
+    [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
     train, valid, test, scalers = standardize(train, valid, test)
     return train, valid, test, scalers
 
@@ -117,18 +119,19 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     :param ph: prediction horizon, e.g. 30
     :param hist: history length, e.g. 60
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
+    :param n_days_test:
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
     printd("Preprocessing " + dataset + subject + "...")
     data = load_idiab(dataset, subject)
-    data = remove_anomalies_idiab(data)
-    data = resample_idiab(data, cs.freq)
+    data = remove_anomalies(data)
+    data = resample(data, cs.freq)
     data = remove_last_day(data)
     # data["CHO"] = CPB(data, cs.C_bio, cs.t_max)
     # data["insulin"] = IOB(data, cs.K_DIA)
     # data["steps"] = AOB(data, cs.k_s)
-    data = create_samples_idiab(data, ph, hist, day_len)
-    data = fill_nans_idiab(data, day_len, n_days_test)
+    data = create_samples(data, ph, hist, day_len)
+    data = fill_nans(data, day_len, n_days_test)
     to_drop = ["calories", "heartrate", "mets", "steps"]
     for col in data.columns:
         for ele in to_drop:
@@ -136,18 +139,14 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
                 data = data.drop(col, axis=1)
                 break
 
-    # if "calories" in col or "heartrate" in col or "mets" in col or "steps" in col:
-    #         data = data.drop(col, axis=1)
-
-    train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
-    [train, valid, test] = [remove_nans(set) for set in [train, valid, test]]
+    train, valid, test = split(data, day_len, n_days_test, cs.cv)
+    [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
     train, valid, test, scalers = standardize(train, valid, test)
     print(test[0].shape)
     return train, valid, test, scalers
 
 
 preprocessing_per_dataset = {
-    "t1dms": preprocessing_t1dms,
     "t1dms": preprocessing_t1dms,
     "t1dms_adolescent": preprocessing_t1dms,
     "t1dms_child": preprocessing_t1dms,
@@ -160,11 +159,12 @@ def preprocessing(target_dataset, target_subject, ph, hist, day_len):
     """
     associate every dataset with a specific pipeline - which should be consistent with the others
 
-    :param dataset: name of dataset (e.g., "ohio")
-    :param subject: name of subject (e.g., "559")
+    :param target_dataset: name of dataset (e.g., "ohio")
+    :param target_subject: name of subject (e.g., "559")
     :param ph: prediction horizon in minutes (e.g., 5)
     :param hist: length of history in minutes (e.g., 60)
-    :param day_len: typical length of a day in minutes standardized to the sampling frequency (e.g. 288 for 1440 min at freq=5 minutes)
+    :param day_len: typical length of a day in minutes standardized to the sampling frequency (e.g. 288 for 1440 min at
+    freq=5 minutes)
     :return: train, valid, test folds
     """
     n_days_test = misc.datasets.datasets[target_dataset]["n_days_test"]
@@ -174,7 +174,7 @@ def preprocessing(target_dataset, target_subject, ph, hist, day_len):
 def preprocessing_source_multi(source_datasets, target_dataset, target_subject, ph, hist, day_len):
     """
     Preprocessing for multi-source training :
-    - preprocess all the subjects from the source dataset, exluding the target subject if it is from the same dataset;
+    - preprocess all the subjects from the source dataset, excluding the target subject if it is from the same dataset;
     - affect a class number to every subject;
     - merge the training and validation sets, and set the testing set as validation;
     - merge the sets from all the patients.
@@ -199,7 +199,8 @@ def preprocessing_source_multi(source_datasets, target_dataset, target_subject, 
             train_sbj, valid_sbj, test_sbj, scalers_sbj = preprocessing_per_dataset[source_dataset](source_dataset,
                                                                                                     source_subject, ph,
                                                                                                     hist,
-                                                                                                    day_len, n_days_test)
+                                                                                                    day_len,
+                                                                                                    n_days_test)
 
             # no cross-validation when source training, train and valid are concatenated, and we evaluate on test
             train, valid, test = pd.concat([train_sbj[0], valid_sbj[0]]).sort_values("datetime"), test_sbj[0], test_sbj[
@@ -209,8 +210,8 @@ def preprocessing_source_multi(source_datasets, target_dataset, target_subject, 
             train["domain"], valid["domain"], test["domain"] = subject_domain, subject_domain, subject_domain
             subject_domain += 1
 
-            for ds, set in zip([train_ds, valid_ds, test_ds, scalers_ds], [train, valid, test, scalers_sbj[0]]):
-                ds.append(set)
+            for ds, set_ in zip([train_ds, valid_ds, test_ds, scalers_ds], [train, valid, test, scalers_sbj[0]]):
+                ds.append(set_)
 
     train_ds, valid_ds, test_ds = [pd.concat(ds) for ds in [train_ds, valid_ds, test_ds]]
 

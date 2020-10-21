@@ -12,24 +12,25 @@ def analyze_filter(data, cutoff, order):
     :param order: order of filter
     :return: /
     """
-    T = 5 * 60
+    t = 5 * 60
     y = data.y.interpolate(method="linear").values
-    N = len(y)
+    n = len(y)
     yf = scipy.fftpack.fft(y)
-    xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
-    b, a = butter(order, cutoff, btype='lowpass', analog=False)
-    y_filt = filtfilt(b, a, y)
-    yf_filt = scipy.fftpack.fft(y_filt)
+    xf = np.linspace(0.0, 1.0 / (2.0 * t), n // 2)
+    [b, a] = butter(order, cutoff)
+    y_filter = filtfilt(b, a, y)
+    yf_filter = scipy.fftpack.fft(y_filter)
 
     plt.subplot(211)
-    plt.plot(xf, 2.0 / N * np.abs(yf[:N // 2]))
-    plt.plot(xf, 2.0 / N * np.abs(yf_filt[:N // 2]))
+    plt.plot(xf, 2.0 / n * np.abs(yf[:n // 2]))
+    plt.plot(xf, 2.0 / n * np.abs(yf_filter[:n // 2]))
 
     plt.subplot(212)
     plt.plot(y)
-    plt.plot(y_filt)
+    plt.plot(y_filter)
 
     plt.show()
+
 
 def filter_splits_in_sample(data, day_len, mode, cutoff=0.333, order=1, plot=False):
     """
@@ -52,10 +53,10 @@ def filter_splits_in_sample(data, day_len, mode, cutoff=0.333, order=1, plot=Fal
         data_horizon_filtered = []
         for data_split in data_hist_filtered:
             data_horizon_filtered.append(filter_glucose_horizon(data_split, day_len, cutoff=cutoff, order=order))
-
         return data_horizon_filtered
     else:
         return data_hist_filtered
+
 
 def filter_glucose_history(data, cutoff, order):
     """
@@ -70,7 +71,7 @@ def filter_glucose_history(data, cutoff, order):
     g = data.loc[:, g_cols].copy(deep=True)
 
     new_cols = []
-    # augment the necessary sample number for filtering, depends on the butterworth filter order
+    # augment the necessary sample number for filtering, depends on the butter worth filter order
     padding = 3 * (order + 1) - len(g_cols) + 1
     for i in range(padding):
         col = "minus" + str(i + 1)
@@ -80,19 +81,19 @@ def filter_glucose_history(data, cutoff, order):
         g[col] = tmp_g
     g = g.loc[:, np.r_[np.flip(new_cols), g_cols]]
 
-    b, a = butter(order, cutoff, btype='lowpass', analog=False)
+    [b, a] = butter(order, cutoff)
     g_filtered = filtfilt(b, a, g.values, padlen=0)
 
     # first values could not be filtered because of nan, so we keep the unfiltered values
     g_filtered[:padding] = g.iloc[:padding].values
 
     for i, col in enumerate(g_cols):
-        data.loc[:,col] = g_filtered[:,padding+i]
+        data.loc[:, col] = g_filtered[:, padding+i]
 
     return data
 
 
-def filter_glucose_horizon(data, day_len, cutoff, order, test_n_days):
+def filter_glucose_horizon(data, day_len, cutoff, order, test_n_days=5):
     """
     Apply a filter on the ground truth
     :param data: dataframe
@@ -106,17 +107,17 @@ def filter_glucose_horizon(data, day_len, cutoff, order, test_n_days):
 
     # fill nans because we cant filter with them
     train_y_inter = data.y.iloc[:-test_n_days * day_len].interpolate(method="linear").values.reshape(-1, 1)
-    first_notna = train_y_inter[~np.isnan(train_y_inter)][0]
-    train_y_inter[np.isnan(train_y_inter)] = first_notna
+    first_not_na = train_y_inter[~np.isnan(train_y_inter)][0]
+    train_y_inter[np.isnan(train_y_inter)] = first_not_na
 
     test_y = data.y.iloc[-test_n_days * day_len:].values.reshape(-1, 1)
 
     # filter
-    b, a = butter(order, cutoff, btype='lowpass', analog=False)
-    train_y_filt = filtfilt(b, a, train_y_inter.ravel()).reshape(-1, 1)
+    [b, a] = butter(order, cutoff)
+    train_y_filter = filtfilt(b, a, train_y_inter.ravel()).reshape(-1, 1)
 
     # replace nans inside y
-    train_y_filt[np.where(np.isnan(train_y))] = np.nan
-    data.y = np.r_[train_y_filt, test_y]
+    train_y_filter[np.where(np.isnan(train_y))] = np.nan
+    data.y = np.r_[train_y_filter, test_y]
 
     return data

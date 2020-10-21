@@ -9,22 +9,25 @@ import torch.nn as nn
 from .pytorch_tools.training import fit, predict
 
 
-class LSTM_ICPRAI(Predictor):
+class LstmIcprai(Predictor):
+    def __init__(self, subject, ph, params, train, valid, test):
+        super().__init__(subject, ph, params, train, valid, test)
+        x_train, y_train, t_train = self._str2dataset("train")
+        # save model
+        rnd = np.random.randint(int(1e7))
+        self.checkpoint_file = os.path.join(cs.path, "tmp", "checkpoints", "lstm_" + str(rnd) + ".pt")
+        printd("Saved model's file:", self.checkpoint_file)
+
+        self.model = self.LstmModule(x_train.shape[2], self.params["hidden"],
+                                     self.params["dropout_weights"], self.params["dropout_layer"])
+        self.model.cuda()
+        self.loss_func = nn.MSELoss()
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
+
     def fit(self):
         # get training data
         x_train, y_train, t_train = self._str2dataset("train")
         x_valid, y_valid, t_valid = self._str2dataset("valid")
-
-        # save model
-        rnd = np.random.randint(1e7)
-        self.checkpoint_file = os.path.join(cs.path, "tmp", "checkpoints", "lstm_" + str(rnd) + ".pt")
-        printd("Saved model's file:", self.checkpoint_file)
-
-        self.model = self.LSTM_Module(x_train.shape[2], self.params["hidden"],
-                                      self.params["dropout_weights"], self.params["dropout_layer"])
-        self.model.cuda()
-        self.loss_func = nn.MSELoss()
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"], weight_decay=self.params["l2"])
 
         train_ds = self.to_dataset(x_train, y_train)
         valid_ds = self.to_dataset(x_valid, y_valid)
@@ -54,7 +57,7 @@ class LSTM_ICPRAI(Predictor):
         cho = data.loc[:, [col for col in data.columns if "CHO" in col]].values
         ins = data.loc[:, [col for col in data.columns if "insulin" in col]].values
 
-        # reshape timeseties in (n_samples, hist, 1) shape and concatenate
+        # reshape time series in (n_samples, hist, 1) shape and concatenate
         g = g.reshape(-1, g.shape[1], 1)
         cho = cho.reshape(-1, g.shape[1], 1)
         ins = ins.reshape(-1, g.shape[1], 1)
@@ -63,7 +66,7 @@ class LSTM_ICPRAI(Predictor):
 
         return x, y, t
 
-    class LSTM_Module(nn.Module):
+    class LstmModule(nn.Module):
         def __init__(self, n_in, neurons, dropout_weights, dropout_layer):
             super().__init__()
 

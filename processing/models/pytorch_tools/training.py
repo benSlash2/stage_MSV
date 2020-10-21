@@ -30,11 +30,10 @@ def loss_batch(model, loss_func, xb, yb, opt=None, plot_gradient=False):
 
 def fit(epochs, batch_size, model, loss_func, opt, train_ds, valid_ds, patience, checkpoint_file):
     """ fit the model on the training_old data given the loss, optimizer, batch size, epochs,
-        and earlystopping patience """
+        and early_stopping patience """
     train_dl, valid_dl = create_dataloaders_from_datasets(train_ds, valid_ds, batch_size)
 
-    early_stopping = EarlyStopping(patience=patience,
-                                   path=checkpoint_file)
+    early_stopping = EarlyStopping(patience=patience, path_=checkpoint_file)
 
     model.eval()
     early_stopping, res = evaluate(0, early_stopping, model, loss_func, [train_dl, valid_dl])
@@ -53,29 +52,17 @@ def fit(epochs, batch_size, model, loss_func, opt, train_ds, valid_ds, patience,
     early_stopping.save()
 
 
-def loss_init(epochs, batch_size, model, loss_func, opt, train_ds, valid_ds, patience, checkpoint_file):
-    """ fit the model on the training_old data given the loss, optimizer, batch size, epochs,
-        and earlystopping patience """
-    train_dl, valid_dl = create_dataloaders_from_datasets(train_ds, valid_ds, batch_size)
-
-    early_stopping = EarlyStopping(patience=patience,
-                                   path=checkpoint_file)
-
-    model.eval()
-    early_stopping, res = evaluate(0, early_stopping, model, loss_func, [train_dl, valid_dl])
-
-
 def evaluate(epoch, early_stopping, model, loss_func, dls):
-    """ evaluate the dataloaders after 1 epoch of training_old """
+    """ evaluate the data loaders after 1 epoch of training_old """
     dls_names = ["[train]", "[valid]"]
     with torch.no_grad():
         loss = []
         for dl, name in zip(dls, dls_names):
             if loss_func.__class__.__name__ == "DALoss":
                 losses, mse, nll, nums = zip(*[loss_batch(model, loss_func, xb, yb) for xb, yb in dl])
-                sum = np.sum(nums)
-                loss_dl = [np.sum(np.multiply(losses, nums)) / sum, np.sum(np.multiply(mse, nums)) / sum,
-                           np.sum(np.multiply(nll, nums)) / sum]
+                sum_ = np.sum(nums)
+                loss_dl = [np.sum(np.multiply(losses, nums)) / sum_, np.sum(np.multiply(mse, nums)) / sum_,
+                           np.sum(np.multiply(nll, nums)) / sum_]
                 es_loss = loss_dl[1]
             else:
                 losses, nums = zip(*[loss_batch(model, loss_func, xb, yb) for xb, yb in dl])

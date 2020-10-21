@@ -5,7 +5,7 @@ parameters = {
     "hist": 180,
 
     # model hyperparameters
-    "hidden": [256,256], #[[16,16,16],[64,64],[256],[256,256]],
+    "hidden": [256, 256],  # [[16,16,16],[64,64],[256],[256,256]],
 
     # training hyperparameters
     # "dropout": 0.0,
@@ -15,10 +15,9 @@ parameters = {
     "epochs": 500,
     "batch_size": 50,
     "lr": 1e-3,
-    "l2": 1e-4, #[0.0, 1e-5, 1e-4, 1e-3], #0.0,
+    "l2": 1e-4,  # [0.0, 1e-5, 1e-4, 1e-3], #0.0,
     "patience": 50,
 }
 
 search = {
 }
-

@@ -3,54 +3,54 @@ from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
 
 
-def AOB(data, k_s, plot=False):
+def aob(data, k_s, plot=False):
     steps = data["steps"]
     ind = data.index
     n = ind.size
-    AOB = np.zeros(n)
+    res = np.zeros(n)
     for i in ind:
         if steps[i] != 0 and np.isnan(steps[i]) == 0:
             t = np.arange(n - i)
-            AOB[i:] += steps[i] * np.exp(-k_s * 5 * t)
+            res[i:] += steps[i] * np.exp(-k_s * 5 * t)
     if plot:
-        plt.plot(AOB, 'r--', label='AOB(t)')
+        plt.plot(res, 'r--', label='AOB(t)')
         plt.plot(steps, 'b:', label="steps(t)")
         plt.ylabel('values')
         plt.xlabel('time')
         plt.legend(loc='best')
         plt.show()
-    return AOB
+    return res
 
 
-def CPB(data, C_bio, t_max, plot=False):
-    CHO = data["CHO"]
+def cpb(data, c_bio, t_max, plot=False):
+    cho = data["CHO"]
     ind = data.index
     n = ind.size
-    CPB = np.zeros(n)
-    Ra = lambda x: quad(lambda t: C_bio * t * np.exp(- t / t_max) / t_max ** 2, 0, 5 * x)[0]
-    K = np.array([Ra(xi) for xi in ind])
+    res = np.zeros(n)
+    def ra(x): return quad(lambda t: c_bio * t * np.exp(- t / t_max) / t_max ** 2, 0, 5 * x)[0]
+    k = np.array([ra(xi) for xi in ind])
     for i in ind:
-        if CHO[i] != 0 and np.isnan(CHO[i]) == 0:
-            CPB[i:] += CHO[i] * (C_bio - K[0:n-i])
+        if cho[i] != 0 and np.isnan(cho[i]) == 0:
+            res[i:] += res[i] * (c_bio - k[0:n - i])
     if plot:
-        plt.plot(CPB, 'r--', label='CPB(t)')
-        plt.plot(CHO, 'b:', label='CHO(t)')
+        plt.plot(res, 'r--', label='CPB(t)')
+        plt.plot(cho, 'b:', label='CHO(t)')
         plt.ylabel('values')
         plt.xlabel('time')
         plt.legend(loc='best')
         plt.show()
-    return CPB
+    return res
 
 
-def IOB(data, K_DIA, plot=False):
+def iob(data, k_dia, plot=False):
 
-    def model(z,t,u):
-        x = z[0]
-        y = z[1]
-        dxdt = u - K_DIA * x
-        dydt = K_DIA * (x - y)
-        dzdt = [dxdt, dydt]
-        return dzdt
+    def model(z_, _, u_):
+        x_ = z_[0]
+        y_ = z_[1]
+        dx_dt = u_ - k_dia * x_
+        dy_dt = k_dia * (x_ - y_)
+        dz_dt = [dx_dt, dy_dt]
+        return dz_dt
 
     z0 = [0, 0]
     n = data["datetime"].size
@@ -62,8 +62,8 @@ def IOB(data, K_DIA, plot=False):
     y[0] = z0[1]
 
     for i in range(1, n):
-        tspan = [t[i-1], t[i]]
-        z = odeint(model, z0, tspan, args=(u[i],))
+        t_span = [t[i-1], t[i]]
+        z = odeint(model, z0, t_span, args=(u[i],))
         x[i] = z[1][0]
         y[i] = z[1][1]
         z0 = z[1]
@@ -76,4 +76,3 @@ def IOB(data, K_DIA, plot=False):
         plt.show()
 
     return x + y
-

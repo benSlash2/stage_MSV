@@ -2,19 +2,19 @@ import numpy as np
 from processing.models.pytorch_tools.gradient_reversal import RevGrad
 import torch
 import os
-from processing.models.deep_tl_predictor import DeepTLPredictor
+from processing.models.deep_tl_predictor import DeepTlPredictor
 import torch.nn as nn
-from processing.models.pytorch_tools.training import fit, predict, loss_init
+from processing.models.pytorch_tools.training import fit, predict
 
 
-class RETAIN_ATL(DeepTLPredictor):
+class RetainATL(DeepTlPredictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
 
-        self.model = self.RETAIN_Module(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
-                                        self.params["n_layers_rnn"], self.params["emb_dropout"],
-                                        self.params["ctx_dropout"],
-                                        self.params["reverse_time"], self.params["bidirectional"], self.n_domains)
+        self.model = self.RetainModule(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
+                                       self.params["n_layers_rnn"], self.params["emb_dropout"],
+                                       self.params["ctx_dropout"], self.params["reverse_time"],
+                                       self.params["bidirectional"], self.n_domains)
 
         self.model_parameters = [
             {'params': self.model.embeddings.parameters()},
@@ -26,16 +26,14 @@ class RETAIN_ATL(DeepTLPredictor):
         ]
 
         self.model.cuda()
+        self.loss_func = self._compute_loss_func()
+        self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
     def fit(self):
         x_train, y_train, t_train = self._str2dataset("train")
         x_valid, y_valid, t_valid = self._str2dataset("valid")
         train_ds = self._to_tensor_ds(x_train, y_train)
         valid_ds = self._to_tensor_ds(x_valid, y_valid)
-
-        self.loss_func = self._compute_loss_func()
-
-        self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
         fit(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
             self.params["patience"], self.checkpoint_file)
@@ -50,8 +48,8 @@ class RETAIN_ATL(DeepTLPredictor):
 
         self.opt = torch.optim.Adam(self.model_parameters, lr=self.params["lr"], weight_decay=self.params["l2"])
 
-        loss_init(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds, valid_ds,
-            self.params["patience"], self.checkpoint_file)
+        loss_init(self.params["epochs"], self.params["batch_size"], self.model, self.loss_func, self.opt, train_ds,
+                  valid_ds, self.params["patience"], self.checkpoint_file)
 
     def predict(self, dataset, clear=True):
         # get the data for which we make the predictions
@@ -75,10 +73,10 @@ class RETAIN_ATL(DeepTLPredictor):
 
     def save(self, file):
         self.model.load_state_dict(torch.load(self.checkpoint_file))
-        no_da_retain = self.RETAIN_Module(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
-                                          self.params["n_layers_rnn"], self.params["emb_dropout"],
-                                          self.params["ctx_dropout"],
-                                          self.params["reverse_time"], self.params["bidirectional"], 0)
+        no_da_retain = self.RetainModule(self.input_shape, self.params["n_features_emb"], self.params["n_hidden_rnn"],
+                                         self.params["n_layers_rnn"], self.params["emb_dropout"],
+                                         self.params["ctx_dropout"], self.params["reverse_time"],
+                                         self.params["bidirectional"], 0)
         no_da_retain.embeddings.load_state_dict(self.model.embeddings.state_dict())
         no_da_retain.rnn_alpha.load_state_dict(self.model.rnn_alpha.state_dict())
         no_da_retain.rnn_beta.load_state_dict(self.model.rnn_beta.state_dict())
@@ -140,7 +138,7 @@ class RETAIN_ATL(DeepTLPredictor):
     def contribution_an(self, dataset):
         contrib = self.contribution(dataset)
         absolute_contrib = np.abs(contrib)
-        sum_contrib = np.expand_dims(absolute_contrib.sum(1).sum(1),axis=[1,2])
+        sum_contrib = np.expand_dims(absolute_contrib.sum(1).sum(1), axis=[1, 2])
         contrib_an = absolute_contrib / sum_contrib
         return contrib_an
 
@@ -158,7 +156,7 @@ class RETAIN_ATL(DeepTLPredictor):
 
         return [c, y]
 
-    class RETAIN_Module(nn.Module):
+    class RetainModule(nn.Module):
 
         def __init__(self, n_in, n_features_emb, n_hidden_rnn, n_layers_rnn, emb_dropout, ctx_dropout,
                      reverse_time=True, bidirectional=False, adversarial_domains=0):

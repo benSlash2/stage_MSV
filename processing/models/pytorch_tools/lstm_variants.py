@@ -1,15 +1,13 @@
 from typing import Optional
-
-from torch import __init__
 from torch.autograd import Variable
 import torch
-import torch.nn as nn
 from torch.nn import __init__ as nn
 from torch.nn.utils.rnn import PackedSequence
 
 """ file that implements LSTMs with various recurrent dropout """
 
-class LSTM_Gal(nn.Module):
+
+class LstmGal(nn.Module):
 
     def __init__(self, input_size, hidden_size, dropout=0.0, batch_first=True):
         """Initialize params."""
@@ -35,32 +33,33 @@ class LSTM_Gal(nn.Module):
 
         self._input_dropout_mask = self._h_dropout_mask = None
 
-    def forward(self, input, hidden=None):
-        """Propogate input through the network."""
+    def forward(self, input_, hidden=None):
+        """Propagate input through the network."""
         # tag = None  #
         if hidden is None:
-            hidden = self._init_hidden(input)
+            hidden = self._init_hidden(input_)
 
-        def recurrence(input, hidden):
+        def recurrence(input__, hidden_):
             """Recurrence helper."""
 
             if self._input_dropout_mask is None:
-                self.set_dropout_masks(input.size(0))
+                self.set_dropout_masks(input__.size(0))
 
-            hx, cx = hidden  # n_b x hidden_dim
+            hx, cx = hidden_  # n_b x hidden_dim
 
             # gates = self.input_weights(input) + self.hidden_weights(hx)
             # ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
 
             try:
-                ingate = self.input_in(input * self._input_dropout_mask[0]) + self.hidden_in(hx * self._h_dropout_mask[0])
+                ingate = self.input_in(input__ * self._input_dropout_mask[0]) + \
+                         self.hidden_in(hx * self._h_dropout_mask[0])
             except:
                 pass
-            forgetgate = self.input_forget(input * self._input_dropout_mask[1]) + self.hidden_forget(
+            forgetgate = self.input_forget(input__ * self._input_dropout_mask[1]) + self.hidden_forget(
                 hx * self._h_dropout_mask[1])
-            cellgate = self.input_cell(input * self._input_dropout_mask[2]) + self.hidden_cell(
+            cellgate = self.input_cell(input__ * self._input_dropout_mask[2]) + self.hidden_cell(
                 hx * self._h_dropout_mask[2])
-            outgate = self.input_out(input * self._input_dropout_mask[3]) + self.hidden_out(
+            outgate = self.input_out(input__ * self._input_dropout_mask[3]) + self.hidden_out(
                 hx * self._h_dropout_mask[3])
 
             ingate = torch.sigmoid(ingate)
@@ -74,12 +73,12 @@ class LSTM_Gal(nn.Module):
             return hy, cy
 
         if self.batch_first:
-            input = input.transpose(0, 1)
+            input_ = input_.transpose(0, 1)
 
         output = []
-        steps = range(input.size(0))
+        steps = range(input_.size(0))
         for i in steps:
-            hidden = recurrence(input[i], hidden)
+            hidden = recurrence(input_[i], hidden)
 
             if isinstance(hidden, tuple):
                 output.append(hidden[0])
@@ -90,7 +89,7 @@ class LSTM_Gal(nn.Module):
             # output.append(isinstance(hidden, tuple) and hidden[0] or hidden)
 
         self._input_dropout_mask = None
-        output = torch.cat(output, 0).view(input.size(0), *output[0].size())
+        output = torch.cat(output, 0).view(input_.size(0), *output[0].size())
 
         if self.batch_first:
             output = output.transpose(0, 1)
@@ -122,11 +121,12 @@ class LSTM_Gal(nn.Module):
         else:
             self._input_dropout_mask = self._h_dropout_mask = [1.] * 4
 
-class LSTM_Semenuita(nn.Module):
+
+class LstmSemenuita(nn.Module):
 
     def __init__(self, input_size, hidden_size, dropout=0.0, batch_first=True):
         """Initialize params."""
-        super(LSTM_Semenuita, self).__init__()
+        super(LstmSemenuita, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = 1
@@ -141,7 +141,7 @@ class LSTM_Semenuita(nn.Module):
         self.input_cell = nn.Linear(input_size, hidden_size)
         self.input_out = nn.Linear(input_size, hidden_size)
 
-        #TODO remove bias=False ?
+        # TODO remove bias=False ?
         self.hidden_in = nn.Linear(hidden_size, hidden_size, bias=False)
         self.hidden_forget = nn.Linear(hidden_size, hidden_size, bias=False)
         self.hidden_cell = nn.Linear(hidden_size, hidden_size, bias=False)
@@ -149,18 +149,18 @@ class LSTM_Semenuita(nn.Module):
 
         self._input_dropout_mask = self._h_dropout_mask = None
 
-    def forward(self, input, hidden=None):
-        """Propogate input through the network."""
+    def forward(self, input_, hidden=None):
+        """Propagate input through the network."""
         # tag = None  #
         if hidden is None:
-            hidden = self._init_hidden(input)
+            hidden = self._init_hidden(input_)
 
-        def recurrence(input, hidden):
+        def recurrence(input__, hidden_):
             """Recurrence helper."""
 
-            self.set_dropout_masks(input.size(0))
+            self.set_dropout_masks(input__.size(0))
 
-            hx, cx = hidden  # n_b x hidden_dim
+            hx, cx = hidden_  # n_b x hidden_dim
 
             # gates = self.input_weights(input) + self.hidden_weights(hx)
             # ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
@@ -173,10 +173,10 @@ class LSTM_Semenuita(nn.Module):
             # outgate = self.input_out(input * self._input_dropout_mask[3]) + self.hidden_out(
             #     hx * self._h_dropout_mask[3])
 
-            ingate = self.input_in(input) + self.hidden_in(hx)
-            forgetgate = self.input_forget(input) + self.hidden_forget(hx)
-            cellgate = self.input_cell(input) + self.hidden_cell(hx)
-            outgate = self.input_out(input) + self.hidden_out(hx)
+            ingate = self.input_in(input__) + self.hidden_in(hx)
+            forgetgate = self.input_forget(input__) + self.hidden_forget(hx)
+            cellgate = self.input_cell(input__) + self.hidden_cell(hx)
+            outgate = self.input_out(input__) + self.hidden_out(hx)
 
             ingate = torch.sigmoid(ingate)
             forgetgate = torch.sigmoid(forgetgate)
@@ -189,12 +189,12 @@ class LSTM_Semenuita(nn.Module):
             return hy, cy
 
         if self.batch_first:
-            input = input.transpose(0, 1)
+            input_ = input_.transpose(0, 1)
 
         output = []
-        steps = range(input.size(0))
+        steps = range(input_.size(0))
         for i in steps:
-            hidden = recurrence(input[i], hidden)
+            hidden = recurrence(input_[i], hidden)
             if isinstance(hidden, tuple):
                 output.append(hidden[0])
             else:
@@ -203,7 +203,7 @@ class LSTM_Semenuita(nn.Module):
             # output.append(hidden[0] if isinstance(hidden, tuple) else hidden)
             # output.append(isinstance(hidden, tuple) and hidden[0] or hidden)
 
-        output = torch.cat(output, 0).view(input.size(0), *output[0].size())
+        output = torch.cat(output, 0).view(input_.size(0), *output[0].size())
 
         if self.batch_first:
             output = output.transpose(0, 1)
@@ -211,7 +211,7 @@ class LSTM_Semenuita(nn.Module):
         return output, hidden
 
     # @staticmethod
-    def _init_hidden(self,input_):
+    def _init_hidden(self, input_):
         # h = torch.zeros_like(input_.reshape(1, input_.size(1), -1))
         # c = torch.zeros_like(input_.reshape(1, input_.size(1), -1))
         h = torch.zeros(input_.size(0), self.hidden_size).cuda()
@@ -247,7 +247,8 @@ class VariationalDropout(nn.Module):
     Note that this is not applied to the recurrent activations in the LSTM like the above paper.
     Instead, it is applied to the inputs and outputs of the recurrent layer.
     """
-    def __init__(self, dropout: float, batch_first: Optional[bool]=False):
+
+    def __init__(self, dropout: float, batch_first: Optional[bool] = False):
         super().__init__()
         self.dropout = dropout
         self.batch_first = batch_first
@@ -279,15 +280,16 @@ class VariationalDropout(nn.Module):
 
 class BetterLSTM(nn.LSTM):
     """ LSTM that implements variational dropout taken from https://github.com/keitakurita/Better_LSTM_PyTorch"""
-    def __init__(self, *args, dropouti: float=0.,
-                 dropoutw: float=0., dropouto: float=0.,
+
+    def __init__(self, *args, dropout_i: float = 0.,
+                 dropout_w: float = 0., dropout_o: float = 0.,
                  batch_first=True, unit_forget_bias=True, **kwargs):
         super().__init__(*args, **kwargs, batch_first=batch_first)
         self.unit_forget_bias = unit_forget_bias
-        self.dropoutw = dropoutw
-        self.input_drop = VariationalDropout(dropouti,
+        self.dropout_w = dropout_w
+        self.input_drop = VariationalDropout(dropout_i,
                                              batch_first=batch_first)
-        self.output_drop = VariationalDropout(dropouto,
+        self.output_drop = VariationalDropout(dropout_o,
                                               batch_first=batch_first)
         self._init_weights()
 
@@ -309,12 +311,12 @@ class BetterLSTM(nn.LSTM):
         for name, param in self.named_parameters():
             if "weight_hh" in name:
                 getattr(self, name).data = \
-                    torch.nn.functional.dropout(param.data, p=self.dropoutw,
+                    torch.nn.functional.dropout(param.data, p=self.dropout_w,
                                                 training=self.training).contiguous()
 
-    def forward(self, input, hx=None):
+    def forward(self, input_, hx=None):
         self._drop_weights()
-        input = self.input_drop(input)
+        input_ = self.input_drop(input_)
         self.flatten_parameters()
-        seq, state = super().forward(input, hx=hx)
+        seq, state = super().forward(input_, hx=hx)
         return self.output_drop(seq), state

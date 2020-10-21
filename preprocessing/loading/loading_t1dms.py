@@ -24,14 +24,14 @@ def load_t1dms(dataset, subject, day_len):
     return df
 
 
-def _T1DMS_scaling(data):
+def _t1dms_scaling(data):
     # scale insulin from pmol to unit
     data.loc[:, "insulin"] = data.loc[:, "insulin"] / 6000.0
 
     # accumulate the CHO intakes
-    CHO_indexes = data[np.invert(data.loc[:, "CHO"] == 0.0)].index
-    meals, meal, start_idx, past_idx = [], data.loc[CHO_indexes[0],"CHO"], CHO_indexes[0], CHO_indexes[0]
-    for idx in CHO_indexes[1:]:
+    cho_indexes = data[np.invert(data.loc[:, "CHO"] == 0.0)].index
+    meals, meal, start_idx, past_idx = [], data.loc[cho_indexes[0], "CHO"], cho_indexes[0], cho_indexes[0]
+    for idx in cho_indexes[1:]:
         if idx == past_idx+1:
             meal = meal + data.loc[idx, "CHO"]
         else:
@@ -43,4 +43,4 @@ def _T1DMS_scaling(data):
     meals = np.array(meals)
 
     data.loc[:, "CHO"] = 0.0
-    data.loc[meals[:,0],"CHO"] = meals[:,1]
+    data.loc[meals[:, 0], "CHO"] = meals[:, 1]

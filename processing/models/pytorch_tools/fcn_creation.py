@@ -4,22 +4,22 @@ import torch.nn as nn
 from processing.models.pytorch_tools.gradient_reversal import RevGrad
 
 
-class FCN_Encoder_Module(nn.Module):
+class FcnEncoderModule(nn.Module):
     def __init__(self, n_in, channels, kernel_sizes, dropout):
-        super(FCN_Encoder_Module, self).__init__()
+        super(FcnEncoderModule, self).__init__()
         input_dims = self._compute_input_dims(n_in, channels)
         self.encoder = _create_sequential(input_dims, channels, kernel_sizes, dropout)
 
-    def forward(self, input):
-        return self.encoder(input)
+    def forward(self, input_):
+        return self.encoder(input_)
 
     def _compute_input_dims(self, n_in, channels):
         return [n_in] + channels[:-1]
 
 
-class FCN_Regressor_Module(nn.Module):
+class FcnRegressorModule(nn.Module):
     def __init__(self, input_dims, channels, kernel_sizes, dropout):
-        super(FCN_Regressor_Module, self).__init__()
+        super(FcnRegressorModule, self).__init__()
         self.regressor = _create_sequential(input_dims, channels, kernel_sizes, dropout)
         self.regressor.add_module("conv_pred_last", nn.Conv1d(channels[-1], 1, 1))
 
@@ -27,9 +27,9 @@ class FCN_Regressor_Module(nn.Module):
         return self.regressor(features)
 
 
-class FCN_Domain_Classifier_Module(nn.Module):
+class FcnDomainClassifierModule(nn.Module):
     def __init__(self, input_dims, channels, kernel_sizes, dropout, n_domains):
-        super(FCN_Domain_Classifier_Module, self).__init__()
+        super(FcnDomainClassifierModule, self).__init__()
         self.domain_classifier = nn.Sequential(
             RevGrad(),
             *np.concatenate(

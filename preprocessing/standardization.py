@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+
 def standardize(train, valid, test):
     """
     Standardize (zero mean and unit variance) the sets w.r.t to the training_old set for every fold

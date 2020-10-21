@@ -5,6 +5,7 @@ from main_glyfe import main
 import misc.datasets
 import argparse
 
+
 class Namespace:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -17,7 +18,8 @@ def batch_main():
         Parameters
             --dataset: which dataset to use, should be referenced in misc/datasets.py;
             --model: model on which the benchmark will be run (e.g., "svr"); need to be lowercase;
-            --params: parameters of the model, usually has the same name as the model (e.g., "svr"); need to be lowercase;
+            --params: parameters of the model, usually has the same name as the model (e.g., "svr");
+            need to be lowercase;
             --ph: the prediction horizon of the models; default 30 minutes;
             --exp: experimental folder in which the data will be stored, inside the results directory;
             --mode: specify is the model is tested on the validation "valid" set or testing "test" set ;
@@ -26,7 +28,7 @@ def batch_main():
 
         Example:
             python main_tl.py --dataset=ohio --model=base --params=base --ph=30
-                        --exp=myexp --mode=valid --plot=1 --log=mylog
+                        --exp=my_exp --mode=valid --plot=1 --log=my_log
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", type=str)

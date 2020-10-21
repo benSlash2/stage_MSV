@@ -11,13 +11,19 @@ from .pytorch_tools.losses import DALoss
 from torch import Tensor
 
 
-class DeepTLPredictor(Predictor):
+class DeepTlPredictor(Predictor):
     def __init__(self, subject, ph, params, train, valid, test):
         super().__init__(subject, ph, params, train, valid, test)
         self.checkpoint_file = self._compute_checkpoint_file(self.__class__.__name__)
         self.n_domains = self._compute_number_of_domains()
         self.domain_weights = self._compute_domain_weights()
         self.input_shape = self._compute_input_shape()
+
+    def fit(self):
+        pass
+
+    def predict(self, dataset):
+        pass
 
     def load(self, file_name):
         self.model.load_state_dict(torch.load(file_name))

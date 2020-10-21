@@ -127,8 +127,8 @@ def top_model(results, metrics):
 
 def print_dict_latex(stats):
     print("\\begin{tabular}{l|| *{6}{c|}}")
-    print("\\hline \\hline", "\n\\textbf{Models} & \\textbf{RMSE} & \\textbf{MAPE} & \\textbf{TG} & \\textbf{AP} & "
-                     "\\textbf{BE} & \\textbf{EP} \\\\ \n\\hline \\hline")
+    print("\\hline \\hline", "\n\\textbf{Models} & \\textbf{RMSE} & \\textbf{MAPE} & \\textbf{TG} & \\textbf{AP} "
+                             "\\textbf{BE} & \\textbf{EP} \\\\ \n\\hline \\hline")
     cpt = 0
     for key in stats.keys():
         mean = [stats[key][key_1][0] for key_1 in stats[key].keys()]
@@ -172,10 +172,9 @@ def comparison(results, variable, metrics):
     variable_ante = {"CPB": "CHO", "IOB": "insulin", "AOB": "steps"}
     var_ante = variable_ante[variable]
     key_variable_ante = [ele for ele in results.keys() if var_ante in ele]
-    dict_stats = {(keyy, key): {key_1: 100 * (results[key][0][key_1] / results[keyy][0][key_1] - 1)
+    dict_stats = {(key_, key): {key_1: 100 * (results[key][0][key_1] / results[key_][0][key_1] - 1)
                                 for key_1 in metrics}
-                  for key, keyy in zip(key_variable, key_variable_ante)}
-    means = [ele["RMSE"] for ele in list(dict_stats.values())]
+                  for key, key_ in zip(key_variable, key_variable_ante)}
     dict_mean = {key: (np.mean([ele[key] for ele in list(dict_stats.values())]),
                        np.std([ele[key] for ele in list(dict_stats.values())]))
                  for key in metrics}
@@ -204,7 +203,8 @@ def comparison_all(mode, variables, metrics, patients=None):
             compare_dict["patient " + str(i)] = {}
             compare_mean["patient " + str(i)] = {}
             for variable in variables:
-                compare_dict["patient " + str(i)][variable], compare_mean["patient " + str(i)][variable] = comparison(results, variable, metrics)
+                compare_dict["patient " + str(i)][variable], compare_mean["patient " + str(i)][variable] = \
+                    comparison(results, variable, metrics)
                 print_dict_stats_physio(compare_dict["patient " + str(i)][variable])
             print_dict_latex_physio(compare_mean["patient " + str(i)])
     return compare_dict, compare_mean
@@ -222,7 +222,8 @@ def visualization(patients, mode, var_physio=None, metrics=None):
     else:
         var_physio = var_physio.split(',')
     compare_dict, compare_mean = comparison_all(mode, var_physio, metrics, patients)
-    compare_dict["global"], compare_mean["global"] = comparison_all(mode, var_physio, metrics)["global"]
+    comp_dict, comp_mean = comparison_all(mode, var_physio, metrics)
+    compare_dict["global"], compare_mean["global"] = comp_dict["global"], comp_mean["global"]
     return best_dict, compare_dict, compare_mean
 
 
@@ -231,30 +232,30 @@ def visualization_old(patients, mode):
         printd("-------------------------------- Patient", str(i), "--------------------------------")
         file = os.path.join(cs.path, "study", "idiab", "lstm", mode, "patient " + str(i), "results.npy")
         param, results = np.load(file, allow_pickle=True)
-        mean_RMSE = {key: results[key][0]["RMSE"] for key in results.keys()}
-        min_RMSE = min(mean_RMSE, key=lambda k: mean_RMSE[k])
+        mean_rmse = {key: results[key][0]["RMSE"] for key in results.keys()}
+        min_rmse = min(mean_rmse, key=lambda k: mean_rmse[k])
         printd("Ref", results["reference"][0]["RMSE"])
-        printd(results[min_RMSE][0]["RMSE"] / results["reference"][0]["RMSE"])
-        printd("The best RMSE model for patient", str(i), "is", min_RMSE, "with ", results[min_RMSE])
-        mean_MAPE = {key: results[key][0]["MAPE"] for key in results.keys()}
-        min_MAPE = min(mean_MAPE, key=lambda k: mean_MAPE[k])
-        printd("The best MAPE model for patient", str(i), "is", min_MAPE, "with ", results[min_MAPE])
-        mean_MASE = {key: results[key][0]["MASE"] for key in results.keys()}
-        min_MASE = min(mean_MASE, key=lambda k: mean_MASE[k])
-        printd("The best MASE model for patient", str(i), "is", min_MASE, "with ", results[min_MASE])
+        printd(results[min_rmse][0]["RMSE"] / results["reference"][0]["RMSE"])
+        printd("The best RMSE model for patient", str(i), "is", min_rmse, "with ", results[min_rmse])
+        mean_mape = {key: results[key][0]["MAPE"] for key in results.keys()}
+        min_mape = min(mean_mape, key=lambda k: mean_mape[k])
+        printd("The best MAPE model for patient", str(i), "is", min_mape, "with ", results[min_mape])
+        mean_mase = {key: results[key][0]["MASE"] for key in results.keys()}
+        min_mase = min(mean_mase, key=lambda k: mean_mase[k])
+        printd("The best MASE model for patient", str(i), "is", min_mase, "with ", results[min_mase])
 
     printd("-------------------------------- Global -------------------------------")
     file = os.path.join(cs.path, "study", "idiab", "lstm", mode, "metrics.npy")
     param, results = np.load(file, allow_pickle=True)
-    mean_RMSE = {key: results[key][0]["RMSE"] for key in results.keys()}
-    min_RMSE = min(mean_RMSE, key=lambda k: mean_RMSE[k])
-    printd("The best global RMSE model is", min_RMSE, "with ", results[min_RMSE])
-    mean_MAPE = {key: results[key][0]["MAPE"] for key in results.keys()}
-    min_MAPE = min(mean_MAPE, key=lambda k: mean_MAPE[k])
-    printd("The best global MAPE model is", min_MAPE, "with ", results[min_MAPE])
-    mean_MASE = {key: results[key][0]["MASE"] for key in results.keys()}
-    min_MASE = min(mean_MASE, key=lambda k: mean_MASE[k])
-    printd("The best global MASE model is", min_MASE, "with ", results[min_MASE])
+    mean_rmse = {key: results[key][0]["RMSE"] for key in results.keys()}
+    min_rmse = min(mean_rmse, key=lambda k: mean_rmse[k])
+    printd("The best global RMSE model is", min_rmse, "with ", results[min_rmse])
+    mean_mape = {key: results[key][0]["MAPE"] for key in results.keys()}
+    min_mape = min(mean_mape, key=lambda k: mean_mape[k])
+    printd("The best global MAPE model is", min_mape, "with ", results[min_mape])
+    mean_mase = {key: results[key][0]["MASE"] for key in results.keys()}
+    min_mase = min(mean_mase, key=lambda k: mean_mase[k])
+    printd("The best global MASE model is", min_mase, "with ", results[min_mase])
 
 
 def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None, patients=None):
@@ -277,7 +278,8 @@ if __name__ == "__main__":
             --dataset: which dataset to use, should be referenced in misc/datasets.py;
             --subject: which subject to use, part of the dataset, use the spelling in misc/datasets.py;
             --model: model on which the benchmark will be run (e.g., "svr"); need to be lowercase; 
-            --params: parameters of the model, usually has the same name as the model (e.g., "svr"); need to be lowercase; 
+            --params: parameters of the model, usually has the same name as the model (e.g., "svr"); 
+              need to be lowercase; 
             --ph: the prediction horizon of the models; default 30 minutes;
             --exp: experimental folder in which the data will be stored, inside the results directory;
             --mode: specify is the model is tested on the validation "valid" set or testing "test" set ;
