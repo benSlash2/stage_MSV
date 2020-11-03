@@ -10,7 +10,7 @@ import misc.datasets
 
 
 class ResultsDataset:
-    def __init__(self, model, experiment, ph, dataset, legacy=False):
+    def __init__(self, model, experiment, ph, dataset):
         """
         Object that compute all the performances of a given dataset for a given model and experiment and prediction
         horizon
@@ -18,7 +18,6 @@ class ResultsDataset:
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
-        :param legacy: used for old results without the params field in them #TODO remove
         """
 
         self.model = model
@@ -26,7 +25,6 @@ class ResultsDataset:
         self.ph = ph
         self.dataset = dataset
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
-        self.legacy = legacy
         self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
 
     def compute_results(self, details=False, study=False, mode="valid"):
@@ -79,7 +77,7 @@ class ResultsDataset:
 
 
 class ResultsAllPatientsAllExp:
-    def __init__(self, model, mode, experiments, ph, dataset, legacy=False):
+    def __init__(self, model, mode, experiments, ph, dataset):
         """
         Object that compute all the performances of a given dataset for a given model and experiment and prediction
         horizon
@@ -87,7 +85,6 @@ class ResultsAllPatientsAllExp:
         :param experiments: names of the experiments (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
-        :param legacy: used for old results without the params field in them #TODO remove
         """
 
         self.model = model
@@ -96,7 +93,6 @@ class ResultsAllPatientsAllExp:
         self.ph = ph
         self.dataset = dataset
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
-        self.legacy = legacy
         self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
         self.save_raw_results()
 
@@ -151,7 +147,7 @@ class ResultsAllPatientsAllExp:
 
 
 class ResultsAllExp:
-    def __init__(self, model, mode, experiments, ph, dataset, subject, legacy=False):
+    def __init__(self, model, mode, experiments, ph, dataset, subject):
         """
         Object that compute all the performances of a given dataset for a given model and experiment and prediction
         horizon
@@ -159,7 +155,6 @@ class ResultsAllExp:
         :param experiments: names of the experiments (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
-        :param legacy: used for old results without the params field in them #TODO remove
         """
 
         self.model = model
@@ -168,7 +163,6 @@ class ResultsAllExp:
         self.ph = ph
         self.dataset = dataset
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
-        self.legacy = legacy
         self.subject = subject
         self.save_raw_results()
 
@@ -225,7 +219,7 @@ class ResultsAllExp:
 
 
 class ResultsAllPatients:
-    def __init__(self, model, mode, experiment, ph, dataset, legacy=False):
+    def __init__(self, model, mode, experiment, ph, dataset):
         """
         Object that compute all the performances of a given dataset for a given model and experiment and prediction
         horizon
@@ -233,7 +227,6 @@ class ResultsAllPatients:
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
-        :param legacy: used for old results without the params field in them #TODO remove
         """
 
         self.model = model
@@ -242,7 +235,6 @@ class ResultsAllPatients:
         self.ph = ph
         self.dataset = dataset
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
-        self.legacy = legacy
         self.subjects = misc.datasets.datasets[self.dataset]["subjects"]
 
     def compute_results(self, details=False):
@@ -291,7 +283,7 @@ class ResultsAllPatients:
 
 
 class ResultsAllSeeds:
-    def __init__(self, model, mode, experiment, ph, dataset, subject, legacy=False):
+    def __init__(self, model, mode, experiment, ph, dataset, subject):
         """
         Object that compute all the performances of a given dataset for a given model and experiment and prediction
         horizon
@@ -299,7 +291,6 @@ class ResultsAllSeeds:
         :param experiment: name of the experiment (e.g., "test")
         :param ph: prediction horizons in minutes (e.g., 30)
         :param dataset: name of the dataset (e.g., "ohio")
-        :param legacy: used for old results without the params field in them #TODO remove
         """
 
         self.model = model
@@ -308,7 +299,6 @@ class ResultsAllSeeds:
         self.ph = ph
         self.dataset = dataset
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
-        self.legacy = legacy
         self.subject = subject
         self.save_raw_results()
 
@@ -375,7 +365,7 @@ class ResultsDatasetTransfer(ResultsDataset):
 
     def __init__(self, model, experiment, ph, source_dataset, target_dataset):
         experiment = source_dataset + "_2_" + target_dataset + "\\" + experiment
-        super().__init__(model, experiment, ph, target_dataset, legacy=False)
+        super().__init__(model, experiment, ph, target_dataset)
 
     def to_latex(self, table="acc", model_name=None):
         """
@@ -399,7 +389,7 @@ class ResultsDatasetTransfer(ResultsDataset):
 
 
 class ResultsSubject:
-    def __init__(self, model, experiment, ph, dataset, subject, params=None, results=None, legacy=False, study=False,
+    def __init__(self, model, experiment, ph, dataset, subject, params=None, results=None, study=False,
                  mode="valid"):
         """
         Object that compute all the performances of a given subject for a given model and experiment and prediction
@@ -412,7 +402,6 @@ class ResultsSubject:
         :param params: if params and results  are given, performances are directly compute on them, and both are saved
         into a file
         :param results: see params
-        :param legacy: used for old results without the params field in them #TODO remove
         """
         self.model = model
         self.experiment = experiment
@@ -422,19 +411,15 @@ class ResultsSubject:
         self.freq = np.max([misc.constants.freq, misc.datasets.datasets[dataset]["glucose_freq"]])
 
         if results is None and params is None:
-            if not legacy:
-                self.params, self.results = self.load_raw_results(study, mode, legacy)
-            else:
-                self.results = self.load_raw_results(study, mode, legacy)
+            self.params, self.results = self.load_raw_results(study, mode)
         else:
             self.results = results
             self.params = params
             self.save_raw_results(study, mode)
 
-    def load_raw_results(self, from_study, mode, legacy=False, transfer=False):
+    def load_raw_results(self, from_study, mode, transfer=False):
         """
         Load the results from previous instance of ResultsSubject that has saved the them
-        :param legacy: if legacy object shall  be used
         :param from_study
         :param mode
         :param transfer
@@ -454,24 +439,14 @@ class ResultsSubject:
                 path = os.path.join(cs.path, "study", self.dataset, self.model, mode, "patient " + self.subject,
                                     self.experiment, "results.npy")
 
-        if not legacy:
-            params, results = np.load(path, allow_pickle=True)
-            dfs = []
-            for result in results:
-                df = pd.DataFrame(result, columns=["datetime", "y_true", "y_pred"])
-                df = df.set_index("datetime")
-                df = df.astype("float32")
-                dfs.append(df)
-            return params, dfs
-        else:
-            results = np.load(path, allow_pickle=True)
-            dfs = []
-            for result in results:
-                df = pd.DataFrame(result, columns=["datetime", "y_true", "y_pred"])
-                df = df.set_index("datetime")
-                df = df.astype("float32")
-                dfs.append(df)
-            return dfs
+        params, results = np.load(path, allow_pickle=True)
+        dfs = []
+        for result in results:
+            df = pd.DataFrame(result, columns=["datetime", "y_true", "y_pred"])
+            df = df.set_index("datetime")
+            df = df.astype("float32")
+            dfs.append(df)
+        return params, dfs
 
     def save_raw_results(self, to_study, mode):
         """

@@ -1,12 +1,14 @@
 data/
+figures/
 venv/
 .idea/
 data_old/
 results/
 results_old/
 tmp/
+study/idiab
 logs/
-processing/models/weights/all_weights/
+processing/models/weights/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

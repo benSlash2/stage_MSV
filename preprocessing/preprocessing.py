@@ -3,9 +3,7 @@ from .cleaning.unit_scaling import scaling_t1dms
 from misc import constants as cs
 from preprocessing.cleaning.nans_removal import remove_nans
 from preprocessing.cleaning.nans_filling import fill_nans
-from preprocessing.loading.loading_ohio import load_ohio
-from preprocessing.loading.loading_t1dms import load_t1dms
-from preprocessing.loading.loading_idiab import load_idiab
+from preprocessing.loading.loading import load
 from preprocessing.data_augmentation.physiological_features import aob, cpb, iob
 import misc.datasets
 from misc.utils import printd
@@ -32,7 +30,7 @@ def preprocessing_ohio(dataset, subject, ph, hist, day_len, n_days_test):
     :param n_days_test:
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
-    data = load_ohio(dataset, subject)
+    data = load(dataset, subject)
     data = resample(data, cs.freq)
     data = create_samples(data, ph, hist, day_len)
     data = fill_nans(data, day_len, n_days_test)
@@ -56,7 +54,7 @@ def preprocessing_t1dms(dataset, subject, ph, hist, day_len, n_days_test):
     :param n_days_test:
     :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
     """
-    data = load_t1dms(dataset, subject, day_len)
+    data = load(dataset, subject, day_len)
     data = scaling_t1dms(data)
     data = resample(data, cs.freq)
     data = create_samples(data, ph, hist, day_len)
@@ -65,52 +63,11 @@ def preprocessing_t1dms(dataset, subject, ph, hist, day_len, n_days_test):
     return train, valid, test, scalers
 
 
-def preprocessing_idiab_full(dataset, subject, ph, hist, day_len):
-    """
-    OhioT1DM dataset preprocessing pipeline:
-    loading -> samples creation -> cleaning (1st) -> splitting -> cleaning (2nd) -> standardization
-
-    First cleaning is done before splitting to speedup the preprocessing
-
-    :param dataset: name of the dataset, e.g. "idiab"
-    :param subject: id of the subject, e.g. "1"
-    :param ph: prediction horizon, e.g. 30
-    :param hist: history length, e.g. 60
-    :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
-    :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
-    """
-    data = load_idiab(dataset, subject)
-    data = remove_anomalies(data)
-    data = resample(data, cs.freq)
-    data = remove_last_day(data)
-    data["CPB"] = cpb(data, cs.C_bio, cs.t_max)
-    data["IOB"] = iob(data, cs.K_DIA)
-    data["AOB"] = aob(data, cs.k_s)
-    data = create_samples(data, ph, hist, day_len)
-    n_days_test = misc.datasets.datasets[dataset]["n_days_test"]
-    data = fill_nans(data, day_len, n_days_test)
-    return data
-
-
-def preprocessing_idiab_select(data, dataset, day_len, features):
-    all_features = ["CHO", "insulin", "calories", "mets", "heartrate", "steps", "CPB", "IOB", "AOB"]
-    to_drop = [ele for ele in all_features if ele not in features]
-    for col in data.columns:
-        for ele in to_drop:
-            if ele in col:
-                data = data.drop(col, axis=1)
-                break
-
-    train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
-    [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
-    train, valid, test, scalers = standardize(train, valid, test)
-    return train, valid, test, scalers
-
-
 def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     """
-    OhioT1DM dataset preprocessing pipeline:
-    loading -> samples creation -> cleaning (1st) -> splitting -> cleaning (2nd) -> standardization
+    Idiab dataset preprocessing pipeline:
+    loading -> remove anomalies -> resample -> remove last day -> samples creation -> cleaning (1st) -> features
+    selection -> splitting -> cleaning (2nd) -> standardization
 
     First cleaning is done before splitting to speedup the preprocessing
 
@@ -120,10 +77,10 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     :param hist: history length, e.g. 60
     :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
     :param n_days_test:
-    :return: training_old folds, validation folds, testing folds, list of scaler (one per fold)
+    :return: training folds, validation folds, testing folds, list of scaler (one per fold)
     """
     printd("Preprocessing " + dataset + subject + "...")
-    data = load_idiab(dataset, subject)
+    data = load(dataset, subject)
     data = remove_anomalies(data)
     data = resample(data, cs.freq)
     data = remove_last_day(data)
@@ -143,6 +100,80 @@ def preprocessing_idiab(dataset, subject, ph, hist, day_len, n_days_test):
     [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
     train, valid, test, scalers = standardize(train, valid, test)
     print(test[0].shape)
+    return train, valid, test, scalers
+
+
+def preprocessing_full(dataset, subject, ph, hist, day_len, all_feat):
+    """
+    Full dataset samples creation pipeline:
+    loading -> selecting features -> remove anomalies -> resample -> remove last day -> samples creation
+    -> cleaning (1st)
+
+    First cleaning is done before splitting to speedup the preprocessing
+
+    :param dataset: name of the dataset, e.g. "idiab"
+    :param subject: id of the subject, e.g. "1"
+    :param ph: prediction horizon, e.g. 30
+    :param hist: history length, e.g. 60
+    :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
+    :param all_feat:
+    :return: dataframe of samples
+    """
+    data = load(dataset, subject)
+
+    features = [feature for feature in list(data.columns) if feature not in ["datetime", "glucose"]]
+    to_drop = [feature for feature in features if feature not in all_feat]
+    data = data.drop(to_drop, axis=1)
+
+    if "idiab" in dataset:
+        data = remove_anomalies(data)
+    if "t1dms" in dataset:
+        data = scaling_t1dms(data)
+
+    data = resample(data, cs.freq)
+
+    if "idiab" in dataset:
+        data = remove_last_day(data)
+
+    if "CPB" in all_feat:
+        data["CPB"] = cpb(data, cs.C_bio, cs.t_max)
+    if "IOB" in all_feat:
+        data["IOB"] = iob(data, cs.K_DIA)
+    if "AOB" in all_feat:
+        data["AOB"] = aob(data, cs.k_s)
+
+    data = create_samples(data, ph, hist, day_len)
+    n_days_test = misc.datasets.datasets[dataset]["n_days_test"]
+
+    if "idiab" in dataset or "ohio" in dataset:
+        data = fill_nans(data, day_len, n_days_test)
+
+    return data
+
+
+def preprocessing_select(data, dataset, day_len, all_feat, features):
+    """
+    Dataset train, valid, test creation for specific features, after samples creation:
+    features selection -> splitting -> cleaning (2nd) -> standardization
+
+    :param data: samples creation after first cleaning
+    :param dataset: name of the dataset, e.g. "idiab"
+    :param day_len: length of a day normalized by sampling frequency, e.g. 288 (1440/5)
+    :param all_feat:
+    :param features: features to be used by the models during the processing phase
+    :return: training folds, validation folds, testing folds, list of scaler (one per fold)
+    """
+    to_drop = [ele for ele in all_feat if ele not in features]
+    for col in data.columns:
+        for ele in to_drop:
+            if ele in col:
+                data = data.drop(col, axis=1)
+                break
+
+    train, valid, test = split(data, day_len, misc.datasets.datasets[dataset]["n_days_test"], cs.cv)
+    if "idiab" in dataset or "ohio" in dataset:
+        [train, valid, test] = [remove_nans(set_) for set_ in [train, valid, test]]
+    train, valid, test, scalers = standardize(train, valid, test)
     return train, valid, test, scalers
 
 

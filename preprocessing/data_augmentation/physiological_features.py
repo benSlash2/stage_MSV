@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 
 
 def aob(data, k_s, plot=False):
+    """
+    Compute the Activity On Board from
+    :param data: samples Dataframe
+    :param k_s: constant for model
+    :param plot: choose to display the results
+    :return: AOB values
+    """
     steps = data["steps"]
     ind = data.index
     n = ind.size
@@ -23,6 +30,14 @@ def aob(data, k_s, plot=False):
 
 
 def cpb(data, c_bio, t_max, plot=False):
+    """
+    Compute the Carbohydrates On Board from
+    :param data: samples Dataframe
+    :param c_bio: constant for model
+    :param t_max: maximum time of influence
+    :param plot: choose to display the results
+    :return: CPB values
+    """
     cho = data["CHO"]
     ind = data.index
     n = ind.size
@@ -43,7 +58,13 @@ def cpb(data, c_bio, t_max, plot=False):
 
 
 def iob(data, k_dia, plot=False):
-
+    """
+    Compute the Insulin On Board from
+    :param data: samples Dataframe
+    :param k_dia: constant for model
+    :param plot: choose to display the results
+    :return: IOB values
+    """
     def model(z_, _, u_):
         x_ = z_[0]
         y_ = z_[1]

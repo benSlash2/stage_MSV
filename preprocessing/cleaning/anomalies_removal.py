@@ -39,13 +39,13 @@ def detect_glucose_readings_anomalies(data, threshold):
     :param data: dataframe
     :param threshold: z_score threshold flagging samples as anomalies. Samples should have the to and from variations
     having a z_score > threshold to be flagged as anomalies
-    :return:
+    :return: anomalies indices
     """
-    df_nonan = data.drop(["CHO", "insulin", "calories", "mets", "heartrate", "steps"], axis=1).dropna()
-    i = df_nonan.index
-    t = df_nonan["datetime"].astype(np.int64).values
-    g = df_nonan["glucose"].values
-
+    features = [feature for feature in list(data.columns) if feature not in ["datetime", "glucose"]]
+    df_no_nan = data.drop(features, axis=1).dropna()
+    i = df_no_nan.index
+    t = df_no_nan["datetime"].astype(np.int64).values
+    g = df_no_nan["glucose"].values
     arr = np.concatenate([g.reshape(-1, 1), t.reshape(-1, 1)], axis=1)
 
     # compute the contexts
@@ -68,5 +68,4 @@ def detect_glucose_readings_anomalies(data, threshold):
         np.c_[np.abs(z_score)[:, 0] >= threshold, np.abs(z_score)[:, 1] >= threshold, np.prod(z_score, axis=1) < 0],
         axis=1))).reshape(-1, 1) + 1
     k = i[anomalies_indexes].ravel()
-    return np.append(k, df_nonan[df_nonan["glucose"] == 0].index)
-
+    return np.append(k, df_no_nan[df_no_nan["glucose"] == 0].index)

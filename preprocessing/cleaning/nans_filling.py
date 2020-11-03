@@ -4,7 +4,10 @@ import numpy as np
 def fill_nans(data, day_len, n_days_test):
     """
     Fill NaNs inside the dataframe of samples following:
-    - CHO and insulin values are filled with 0
+    - CHO, insulin and steps (idiab) values are filled with 0
+    - mets (idiab) are filled with their resting value 10
+    - calories (idiab) are filled with their resting value 1.1296000480651855
+    - heartrate (idiab) are filled with mean value
     - glucose history are interpolated (linearly) when possible and extrapolated if not
     :param data: sample dataframe
     :param day_len: length of day, scaled to sampling frequency

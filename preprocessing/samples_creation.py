@@ -4,7 +4,8 @@ import pandas as pd
 
 def create_samples(data, ph, hist, day_len):
     """
-    Create samples consisting in glucose, insulin and CHO histories (past hist-length values)
+    Create samples consisting in glucose, insulin and CHO (+ mets, heartrate, steps, CPB, AOB, IOB if needed)
+    histories (past hist-length values)
     :param data: dataframe
     :param ph: prediction horizon in minutes in sampling frequency scale
     :param hist: history length in sampling frequency scale

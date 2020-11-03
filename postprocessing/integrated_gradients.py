@@ -7,7 +7,7 @@ import misc.constants as cs
 import pickle
 from pathlib import Path
 from preprocessing.preprocessing import preprocessing
-from processing.models.retain_atl import RETAIN_ATL
+from processing.models.retain_atl import RetainATL
 from misc.utils import locate_params
 import pandas as pd
 import warnings

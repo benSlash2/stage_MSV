@@ -4,7 +4,7 @@ import numpy as np
 import misc
 import misc.constants as cs
 from preprocessing.preprocessing import preprocessing
-from processing.models.retain_atl import RETAIN_ATL
+from processing.models.retain_atl import RetainATL
 from misc.utils import locate_params
 import pandas as pd
 
@@ -42,7 +42,7 @@ class RetainAnalyzer:
     def _create_models(self, subject):
         models = []
         for train_i, valid_i, test_i in zip(self.train[subject], self.valid[subject], self.test[subject]):
-            model = RETAIN_ATL(subject, self.ph, self.params, train_i, valid_i, test_i)
+            model = RetainATL(subject, self.ph, self.params, train_i, valid_i, test_i)
             file_name = "RETAIN_ATL_" + self.dataset + subject + ".pt"
             file_path = os.path.join(cs.path, "processing", "models", "weights", self.exp, file_name)
             model.load(file_path)
