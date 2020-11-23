@@ -11,10 +11,10 @@ def main(dataset, model, params, mode, ph, number_comb=None, features_comb=None,
     all_feat, combs, patients = combinations(dataset, model, params, mode, ph, features_comb, number_comb, patients)
 
     """ FULL PROCESSING PIPELINE """
-    # study(dataset, model, params, mode, ph, all_feat, patients, combs)
-    #
-    # """ GLOBAL RESULTS"""
-    # results_metrics(combs, model, mode, ph, dataset, patients)
+    study(dataset, model, params, mode, ph, all_feat, patients, combs)
+
+    """ GLOBAL RESULTS"""
+    results_metrics(combs, model, mode, ph, dataset, patients)
 
     """ RESULTS VISUALIZATION"""
     visualization(patients, mode)

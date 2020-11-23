@@ -2,12 +2,9 @@ data/
 figures/
 venv/
 .idea/
-data_old/
 results/
-results_old/
 tmp/
-study/idiab
-logs/
+study/idiab/
 processing/models/weights/
 
 # Byte-compiled / optimized / DLL files

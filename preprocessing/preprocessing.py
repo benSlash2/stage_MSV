@@ -136,11 +136,11 @@ def preprocessing_full(dataset, subject, ph, hist, day_len, all_feat):
         data = remove_last_day(data)
 
     if "CPB" in all_feat:
-        data["CPB"] = cpb(data, cs.C_bio, cs.t_max)
+        data["CPB"] = cpb(data, cs.C_bio, cs.t_max, True)
     if "IOB" in all_feat:
-        data["IOB"] = iob(data, cs.K_DIA)
+        data["IOB"] = iob(data, cs.K_DIA, True)
     if "AOB" in all_feat:
-        data["AOB"] = aob(data, cs.k_s)
+        data["AOB"] = aob(data, cs.k_s, True)
 
     data = create_samples(data, ph, hist, day_len)
     n_days_test = misc.datasets.datasets[dataset]["n_days_test"]

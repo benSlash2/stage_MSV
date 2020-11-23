@@ -22,8 +22,8 @@ def aob(data, k_s, plot=False):
     if plot:
         plt.plot(res, 'r--', label='AOB(t)')
         plt.plot(steps, 'b:', label="steps(t)")
-        plt.ylabel('values')
-        plt.xlabel('time')
+        plt.ylabel('Values (number of steps)')
+        plt.xlabel('Time (s)')
         plt.legend(loc='best')
         plt.show()
     return res
@@ -46,12 +46,12 @@ def cpb(data, c_bio, t_max, plot=False):
     k = np.array([ra(xi) for xi in ind])
     for i in ind:
         if cho[i] != 0 and np.isnan(cho[i]) == 0:
-            res[i:] += res[i] * (c_bio - k[0:n - i])
+            res[i:] += cho[i] * (c_bio - k[0:n - i])
     if plot:
         plt.plot(res, 'r--', label='CPB(t)')
         plt.plot(cho, 'b:', label='CHO(t)')
-        plt.ylabel('values')
-        plt.xlabel('time')
+        plt.ylabel('Values (g)')
+        plt.xlabel('Time (s)')
         plt.legend(loc='best')
         plt.show()
     return res
@@ -91,8 +91,8 @@ def iob(data, k_dia, plot=False):
     if plot:
         plt.plot(t, u, 'r--', label='u(t)')
         plt.plot(t, x + y, 'b:', label='IOB(t)')
-        plt.ylabel('values')
-        plt.xlabel('time')
+        plt.ylabel('Values (units)')
+        plt.xlabel('Time (s)')
         plt.legend(loc='best')
         plt.show()
 
